@@ -62,10 +62,10 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
     // UI States
     const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
     const [estimatedSizes, setEstimatedSizes] = useState<Record<string, string>>({});
-    const [watermarkText, setWatermarkText] = useState('');
+    const [watermarkText] = useState('');
     const [editMode, setEditMode] = useState<'erase' | 'restore'>('erase');
     const [brushSize, setBrushSize] = useState(60);
-    const [isMagicBrush, setIsMagicBrush] = useState(true);
+    const [isMagicBrush] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const [customColor, setCustomColor] = useState('#6366f1');
 
