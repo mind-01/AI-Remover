@@ -96,8 +96,8 @@ export const FeaturesSection: React.FC = () => {
                                     </div>
 
                                     <div className="h-64 rounded-2xl bg-slate-900 border border-white/5 relative overflow-hidden group">
-                                        <div
-                                            className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+                                        <div 
+                                            className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center transition-transform duration-700 group-hover:scale-110" 
                                             role="img"
                                             aria-label="AI background removal demo showing red shoe with transparent background"
                                         />
