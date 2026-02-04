@@ -193,34 +193,6 @@ export const FeaturesSection: React.FC = () => {
     aria-label="Background removed result with transparent checkered pattern"
 />
                                         
-                                        {/* Success Overlay */}
-                                        {demoStep === 'complete' && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-green-900/60 to-transparent">
-                                                <div className="text-center">
-                                                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg shadow-green-500/30">
-                                                        <CheckCircle2 className="w-6 h-6 text-white" />
-                                                    </div>
-                                                    <p className="text-xs font-black text-white uppercase tracking-widest">Done! 0.4s</p>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
-                                        <div className="absolute bottom-5 left-6 right-6">
-                                            <div className="flex justify-between items-end">
-                                                <div className="space-y-1">
-                                                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Efficiency</p>
-                                                    <p className="text-sm font-bold text-white tracking-tight">
-                                                        {demoStep === 'complete' ? 'Background Removed!' : 'High-Precision Masking'}
-                                                    </p>
-                                                </div>
-                                                <div className="p-2 bg-blue-600 rounded-lg">
-                                                    <Shield className="w-4 h-4 text-blue-400" aria-label="Secure processing" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                     {/* Stats */}
                                     <div className="grid grid-cols-2 gap-4">
                                         {[
@@ -273,4 +245,5 @@ export const FeaturesSection: React.FC = () => {
         </section>
     );
 };
+
 
