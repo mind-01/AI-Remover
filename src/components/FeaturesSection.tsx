@@ -134,64 +134,91 @@ export const FeaturesSection: React.FC = () => {
                                             </button>
                                         )}
                                     </div>
+                                    
+                                    {/* ✅ RESULT IMAGE CONTAINER - FIXED */}
+<div className="h-64 rounded-2xl bg-slate-900 border border-white/5 relative overflow-hidden">
 
-                                    {/* ✅ DYNAMIC IMAGE CONTAINER */}
-                                    <div className="h-64 rounded-2xl bg-slate-900 border border-white/5 relative overflow-hidden">
-                                        {/* Original Image */}
-                                        <div 
-                                            className={`absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center transition-all duration-1000 ${
-                                                demoStep === 'complete' ? 'opacity-0 scale-110' : 'opacity-100 scale-100'
-                                            }`}
-                                            role="img"
-                                            aria-label="Original image with red background"
-                                        />
-                                        
-                                        {/* Processing Overlay */}
-                                        {demoStep === 'processing' && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm">
-                                                <div className="text-center space-y-3">
-                                                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
-                                                    <p className="text-xs font-black text-white uppercase tracking-widest">Removing Background...</p>
-                                                    <div className="w-32 h-1 bg-slate-700 rounded-full overflow-hidden">
-                                                        <div className="h-full bg-blue-500 animate-[loading_2s_ease-in-out]" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
+    {/* 1. ORIGINAL IMAGE - Red background ke saath */}
+    <div 
+        className={`absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center transition-all duration-1000 ${
+            demoStep === 'complete' ? 'opacity-0 scale-110' : 'opacity-100 scale-100'
+        }`}
+        role="img"
+        aria-label="Original image with red background"
+    />
+    
+    {/* 2. PROCESSING OVERLAY */}
+    {demoStep === 'processing' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm z-20">
+            <div className="text-center space-y-3">
+                <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
+                <p className="text-xs font-black text-white uppercase tracking-widest">Removing Background...</p>
+            </div>
+        </div>
+    )}
 
-                                        {/* Result Image - CSS से fake transparent effect */}
-<div 
-    className={`absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center transition-all duration-1000 ${
-        demoStep === 'complete' ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-    }`}
-    style={{
-        filter: demoStep === 'complete' ? 'brightness(1.3) contrast(1.2) saturate(0.9)' : 'none',
-        mixBlendMode: demoStep === 'complete' ? 'multiply' : 'normal'
-    }}
-    role="img"
-    aria-label="Background removed result"
-/>
-                                        
-                                        {/* Result Image with fake white background */}
-<div 
-    className={`absolute inset-0 transition-all duration-1000 ${
-        demoStep === 'complete' ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-    }`}
-    style={{
-        backgroundImage: `
-            linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
-            linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
-            linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
-            linear-gradient(-45deg, transparent 75%, #f0f0f0 75%),
-            url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')
-        `,
-        backgroundSize: '20px 20px, 20px 20px, 20px 20px, 20px 20px, cover',
-        backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px, center',
-        filter: demoStep === 'complete' ? 'brightness(1.1) contrast(1.1)' : 'none'
-    }}
-    role="img"
-    aria-label="Background removed result with transparent checkered pattern"
-/>
+    {/* 3. RESULT - Checkered Background + Shoe */}
+    <div 
+        className={`absolute inset-0 transition-all duration-1000 ${
+            demoStep === 'complete' ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        }`}
+    >
+        {/* 3a. Checkered Pattern Background */}
+        <div 
+            className="absolute inset-0"
+            style={{
+                backgroundImage: `
+                    linear-gradient(45deg, #e5e5e5 25%, transparent 25%), 
+                    linear-gradient(-45deg, #e5e5e5 25%, transparent 25%), 
+                    linear-gradient(45deg, transparent 75%, #e5e5e5 75%), 
+                    linear-gradient(-45deg, transparent 75%, #e5e5e5 75%)
+                `,
+                backgroundSize: '20px 20px',
+                backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+                backgroundColor: '#ffffff'
+            }}
+        />
+        
+        {/* 3b. Shoe Image (No Background) */}
+        <div 
+            className="absolute inset-0 bg-contain bg-center bg-no-repeat"
+            style={{
+                backgroundImage: `url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')`,
+                filter: 'brightness(1.1) contrast(1.2)'
+            }}
+            role="img"
+            aria-label="Shoe with background removed"
+        />
+    </div>
+    
+    {/* 4. Success Overlay */}
+    {demoStep === 'complete' && (
+        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+            <div className="text-center">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg shadow-green-500/30">
+                    <CheckCircle2 className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-xs font-black text-white uppercase tracking-widest drop-shadow-lg">Done! 0.4s</p>
+            </div>
+        </div>
+    )}
+
+    {/* 5. Bottom Info */}
+    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none" />
+    <div className="absolute bottom-5 left-6 right-6 z-10">
+        <div className="flex justify-between items-end">
+            <div className="space-y-1">
+                <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Efficiency</p>
+                <p className="text-sm font-bold text-white tracking-tight">
+                    {demoStep === 'complete' ? 'Background Removed!' : 'High-Precision Masking'}
+                </p>
+            </div>
+            <div className="p-2 bg-blue-600 rounded-lg">
+                <Shield className="w-4 h-4 text-blue-400" aria-label="Secure processing" />
+            </div>
+        </div>
+    </div>
+</div>
                                         
                                     {/* Stats */}
                                     <div className="grid grid-cols-2 gap-4">
@@ -245,5 +272,6 @@ export const FeaturesSection: React.FC = () => {
         </section>
     );
 };
+
 
 
