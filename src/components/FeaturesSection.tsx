@@ -159,18 +159,39 @@ export const FeaturesSection: React.FC = () => {
                                             </div>
                                         )}
 
-                                        {/* Result Image (White/Gray background) */}
-                                        <div 
-                                            className={`absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center transition-all duration-1000 ${
-                                                demoStep === 'complete' ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                                            }`}
-                                            style={{
-                                                filter: demoStep === 'complete' ? 'brightness(1.1) contrast(1.1)' : 'none',
-                                                backgroundColor: demoStep === 'complete' ? '#f8fafc' : 'transparent'
-                                            }}
-                                            role="img"
-                                            aria-label="Background removed result"
-                                        />
+                                        {/* Result Image - CSS से fake transparent effect */}
+<div 
+    className={`absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center transition-all duration-1000 ${
+        demoStep === 'complete' ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+    }`}
+    style={{
+        filter: demoStep === 'complete' ? 'brightness(1.3) contrast(1.2) saturate(0.9)' : 'none',
+        mixBlendMode: demoStep === 'complete' ? 'multiply' : 'normal'
+    }}
+    role="img"
+    aria-label="Background removed result"
+/>
+                                        
+                                        {/* Result Image with fake white background */}
+<div 
+    className={`absolute inset-0 transition-all duration-1000 ${
+        demoStep === 'complete' ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+    }`}
+    style={{
+        backgroundImage: `
+            linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
+            linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
+            linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
+            linear-gradient(-45deg, transparent 75%, #f0f0f0 75%),
+            url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')
+        `,
+        backgroundSize: '20px 20px, 20px 20px, 20px 20px, 20px 20px, cover',
+        backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px, center',
+        filter: demoStep === 'complete' ? 'brightness(1.1) contrast(1.1)' : 'none'
+    }}
+    role="img"
+    aria-label="Background removed result with transparent checkered pattern"
+/>
                                         
                                         {/* Success Overlay */}
                                         {demoStep === 'complete' && (
@@ -252,3 +273,4 @@ export const FeaturesSection: React.FC = () => {
         </section>
     );
 };
+
