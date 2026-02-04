@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { removeBackground } from '@imgly/background-removal';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Header } from './components/layout/Header';
 import { Hero } from './components/Hero';
 import { ProcessingView } from './components/ProcessingView';
@@ -181,6 +182,7 @@ function App() {
 
       <Footer />
       <Analytics />
+      <SpeedInsights />
     </div>
   );
 }
