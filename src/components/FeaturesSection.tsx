@@ -107,92 +107,75 @@ export const FeaturesSection: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {/* ✅ DYNAMIC BUTTONS */}
-                                        {demoStep === 'idle' && (
-                                            <button 
-                                                onClick={runLiveDemo}
-                                                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all border border-blue-500 hover:border-blue-400 shadow-lg shadow-blue-600/20"
-                                            >
-                                                Live Demo
-                                            </button>
-                                        )}
-                                        {demoStep === 'processing' && (
-                                            <button 
-                                                disabled
-                                                className="px-5 py-2.5 bg-slate-700 text-slate-400 text-[11px] font-black uppercase tracking-widest rounded-xl border border-slate-600 flex items-center gap-2"
-                                            >
-                                                <Loader2 className="w-3 h-3 animate-spin" />
-                                                Processing...
-                                            </button>
-                                        )}
-                                        {demoStep === 'complete' && (
-                                            <button 
-                                                onClick={resetDemo}
-                                                className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all border border-green-500"
-                                            >
-                                                Try Again
-                                            </button>
-                                        )}
-                                    </div>
+                                        {/* ✅ DYNAMIC IMAGE CONTAINER */}
+<div className="h-64 rounded-2xl bg-slate-900 border border-white/5 relative overflow-hidden">
+    
+    {/* CHECKERED BACKGROUND - Always visible when complete */}
+    <div 
+        className={`absolute inset-0 transition-opacity duration-1000 ${
+            demoStep === 'complete' ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{
+            backgroundImage: `
+                linear-gradient(45deg, #e5e5e5 25%, transparent 25%), 
+                linear-gradient(-45deg, #e5e5e5 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #e5e5e5 75%), 
+                linear-gradient(-45deg, transparent 75%, #e5e5e5 75%)
+            `,
+            backgroundSize: '20px 20px',
+            backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+            backgroundColor: '#f8fafc'
+        }}
+    />
 
-                                    {/* ✅ DYNAMIC IMAGE CONTAINER */}
-                                    <div className="h-64 rounded-2xl bg-slate-900 border border-white/5 relative overflow-hidden">
-                                        {/* 1. ORIGINAL IMAGE */}
-                                        <div 
-                                            className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
-                                            style={{
-                                                backgroundImage: `url('/demo/shoe-original.jpg')`,
-                                                opacity: demoStep === 'complete' ? 0 : 1
-                                            }}
-                                        />
+    {/* 1. ORIGINAL IMAGE */}
+    <div 
+        className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+        style={{
+            backgroundImage: `url('/demo/shoe-original.jpg')`,
+            opacity: demoStep === 'complete' ? 0 : 1
+        }}
+    />
 
-                                        {/* 2. RESULT IMAGE - Transparent PNG */}
-                                        <div 
-                                            className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
-                                            style={{
-                                                backgroundImage: `url('/demo/shoe-result.png')`,
-                                                opacity: demoStep === 'complete' ? 1 : 0
-                                            }}
-                                        />
-                                        
-                                        {/* 3. PROCESSING OVERLAY */}
-                                        {demoStep === 'processing' && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm z-20">
-                                                <div className="text-center space-y-3">
-                                                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
-                                                    <p className="text-xs font-black text-white uppercase tracking-widest">Removing Background...</p>
-                                                </div>
-                                            </div>
-                                        )}
+    {/* 2. RESULT IMAGE - Bigger & Centered */}
+    <div 
+        className={`absolute inset-0 flex items-center justify-center transition-all duration-1000 ${
+            demoStep === 'complete' ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        }`}
+    >
+        <img 
+            src="/demo/shoe-result.png" 
+            alt="Shoe with transparent background"
+            className="max-w-[90%] max-h-[90%] object-contain drop-shadow-2xl"
+        />
+    </div>
+    
+    {/* 3. PROCESSING OVERLAY */}
+    {demoStep === 'processing' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm z-20">
+            <div className="text-center space-y-3">
+                <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
+                <p className="text-xs font-black text-white uppercase tracking-widest">Removing Background...</p>
+            </div>
+        </div>
+    )}
 
-                                        {/* 4. SUCCESS OVERLAY */}
-                                        {demoStep === 'complete' && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-green-900/60 to-transparent z-30 pointer-events-none">
-                                                <div className="text-center">
-                                                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg shadow-green-500/30">
-                                                        <CheckCircle2 className="w-6 h-6 text-white" />
-                                                    </div>
-                                                    <p className="text-xs font-black text-white uppercase tracking-widest drop-shadow-lg">Done! 0.4s</p>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* 5. BOTTOM INFO */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none" />
-                                        <div className="absolute bottom-5 left-6 right-6 z-10">
-                                            <div className="flex justify-between items-end">
-                                                <div className="space-y-1">
-                                                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Efficiency</p>
-                                                    <p className="text-sm font-bold text-white tracking-tight">
-                                                        {demoStep === 'complete' ? 'Background Removed!' : 'High-Precision Masking'}
-                                                    </p>
-                                                </div>
-                                                <div className="p-2 bg-blue-600 rounded-lg">
-                                                    <Shield className="w-4 h-4 text-blue-400" aria-label="Secure processing" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+    {/* 4. BOTTOM INFO - Green checkmark हटाया */}
+    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none" />
+    <div className="absolute bottom-5 left-6 right-6 z-10">
+        <div className="flex justify-between items-end">
+            <div className="space-y-1">
+                <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Efficiency</p>
+                <p className="text-sm font-bold text-white tracking-tight">
+                    {demoStep === 'complete' ? 'Background Removed!' : 'High-Precision Masking'}
+                </p>
+            </div>
+            <div className="p-2 bg-blue-600 rounded-lg">
+                <Shield className="w-4 h-4 text-blue-400" aria-label="Secure processing" />
+            </div>
+        </div>
+    </div>
+</div>
 
                                     {/* Stats */}
                                     <div className="grid grid-cols-2 gap-4">
@@ -246,3 +229,4 @@ export const FeaturesSection: React.FC = () => {
         </section>
     );
 };
+
