@@ -181,7 +181,7 @@ export const FeaturesSection: React.FC = () => {
         
         {/* 3b. Shoe Image (No Background) */}
         <div 
-            className="absolute inset-0 bg-contain bg-center bg-no-repeat"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
                 backgroundImage: `url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')`,
                 filter: 'brightness(1.1) contrast(1.2)'
