@@ -6,8 +6,7 @@ export const FeaturesSection: React.FC = () => {
     const [demoStep, setDemoStep] = useState<'idle' | 'processing' | 'complete'>('idle');
 
     // ✅ ADDED: Live Demo Function
-    const runLiveDemo = () => {
-    alert("Demo clicked!");
+    cconst runLiveDemo = () => {
     setDemoStep('processing');
     setTimeout(() => {
         setDemoStep('complete');
@@ -280,6 +279,7 @@ export const FeaturesSection: React.FC = () => {
         </section>
     );
 };
+
 
 
 
