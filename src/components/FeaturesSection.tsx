@@ -25,7 +25,7 @@ export const FeaturesSection: React.FC = () => {
                                 Step {item.step}
                             </div>
                             <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300 shadow-sm border border-blue-100">
-                                <item.icon className="w-6 h-6" />
+                                <item.icon className="w-6 h-6" aria-label={item.title} />
                             </div>
                             <h4 className="text-xl font-black text-slate-800 mb-2">{item.title}</h4>
                             <p className="text-slate-500 text-sm leading-relaxed font-medium">{item.desc}</p>
@@ -62,7 +62,7 @@ export const FeaturesSection: React.FC = () => {
                                 ].map((item, idx) => (
                                     <div key={idx} className="flex items-start gap-4">
                                         <div className="p-1 px-2.5 rounded-lg border border-blue-500/20 bg-blue-500/10 mt-1">
-                                            <CheckCircle2 className="w-4 h-4 text-blue-400" />
+                                            <CheckCircle2 className="w-4 h-4 text-blue-400" aria-label="Feature verified" />
                                         </div>
                                         <div>
                                             <h5 className="text-white font-bold text-sm tracking-tight">{item.title}</h5>
@@ -80,7 +80,7 @@ export const FeaturesSection: React.FC = () => {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                                                <Zap className="w-5 h-5 text-white" />
+                                                <Zap className="w-5 h-5 text-white" aria-label="AI powered" />
                                             </div>
                                             <div className="flex flex-col">
                                                 <span className="text-xs font-black text-white uppercase tracking-wider">AI Analysis</span>
@@ -96,7 +96,11 @@ export const FeaturesSection: React.FC = () => {
                                     </div>
 
                                     <div className="h-64 rounded-2xl bg-slate-900 border border-white/5 relative overflow-hidden group">
-                                        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center transition-transform duration-700 group-hover:scale-110" />
+                                        <div 
+                                            className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center transition-transform duration-700 group-hover:scale-110" 
+                                            role="img"
+                                            aria-label="AI background removal demo showing red shoe with transparent background"
+                                        />
                                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
                                         <div className="absolute bottom-5 left-6 right-6">
                                             <div className="flex justify-between items-end">
@@ -104,8 +108,8 @@ export const FeaturesSection: React.FC = () => {
                                                     <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Efficiency</p>
                                                     <p className="text-sm font-bold text-white tracking-tight">High-Precision Masking</p>
                                                 </div>
-                                                <div className="p-2bg-blue-600 rounded-lg">
-                                                    <Shield className="w-4 h-4 text-blue-400" />
+                                                <div className="p-2 bg-blue-600 rounded-lg">
+                                                    <Shield className="w-4 h-4 text-blue-400" aria-label="Secure processing" />
                                                 </div>
                                             </div>
                                         </div>
@@ -148,7 +152,7 @@ export const FeaturesSection: React.FC = () => {
                         <div key={idx} className="p-8 bg-slate-50 rounded-3xl border border-slate-200 hover:border-blue-200 hover:bg-white transition-all cursor-default group">
                             <h4 className="text-lg font-black text-slate-800 mb-3 flex items-center justify-between">
                                 {faq.q}
-                                <MousePointer2 className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                                <MousePointer2 className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors" aria-label="FAQ item" />
                             </h4>
                             <p className="text-slate-500 text-sm leading-relaxed font-medium">{faq.a}</p>
                         </div>
