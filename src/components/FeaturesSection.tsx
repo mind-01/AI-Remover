@@ -137,15 +137,24 @@ export const FeaturesSection: React.FC = () => {
 
                                     {/* ✅ DYNAMIC IMAGE CONTAINER */}
                                     <div className="h-64 rounded-2xl bg-slate-900 border border-white/5 relative overflow-hidden">
-                                        {/* Original Image */}
-                                        <div 
-                                            className={`absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center transition-all duration-1000 ${
-                                                demoStep === 'complete' ? 'opacity-0 scale-110' : 'opacity-100 scale-100'
-                                            }`}
-                                            role="img"
-                                            aria-label="Original image with red background"
-                                        />
-                                        
+                                        {/* 1. ORIGINAL IMAGE */}
+<div 
+    className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+    style={{
+        backgroundImage: `url('/demo/shoe-original.jpg')`,
+        opacity: demoStep === 'complete' ? 0 : 1
+    }}
+/>
+
+{/* 2. RESULT IMAGE */}
+<div 
+    className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+    style={{
+        backgroundImage: `url('/demo/shoe-result.png')`,
+        opacity: demoStep === 'complete' ? 1 : 0
+    }}
+/>
+                                    
                                         {/* Processing Overlay */}
                                         {demoStep === 'processing' && (
                                             <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm">
@@ -252,3 +261,4 @@ export const FeaturesSection: React.FC = () => {
         </section>
     );
 };
+
