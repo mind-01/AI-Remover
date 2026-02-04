@@ -140,8 +140,8 @@ export const FeaturesSection: React.FC = () => {
 
     {/* 1. ORIGINAL IMAGE - Red background ke saath */}
     <div 
-        className={`absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center transition-all duration-1000 ${
-            demoStep === 'complete' ? 'opacity-0 scale-110' : 'opacity-100 scale-100'
+        bg-[url('/demo/shoe-original.jpg')]   // Original के लिए
+        bg-[url('/demo/shoe-result.png')]     // Result के लिए
         }`}
         role="img"
         aria-label="Original image with red background"
@@ -272,6 +272,7 @@ export const FeaturesSection: React.FC = () => {
         </section>
     );
 };
+
 
 
 
