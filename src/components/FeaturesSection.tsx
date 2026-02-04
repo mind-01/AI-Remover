@@ -138,14 +138,23 @@ export const FeaturesSection: React.FC = () => {
                                     {/* ✅ RESULT IMAGE CONTAINER - FIXED */}
 <div className="h-64 rounded-2xl bg-slate-900 border border-white/5 relative overflow-hidden">
 
-    {/* 1. ORIGINAL IMAGE - Red background ke saath */}
-    <div 
-        bg-[url('/demo/shoe-original.jpg')]   // Original के लिए
-        bg-[url('/demo/shoe-result.png')]     // Result के लिए
-        }`}
-        role="img"
-        aria-label="Original image with red background"
-    />
+    {/* 1. ORIGINAL IMAGE */}
+<div 
+    className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+    style={{
+        backgroundImage: `url('/demo/shoe-original.jpg')`,
+        opacity: demoStep === 'complete' ? 0 : 1
+    }}
+/>
+
+{/* 2. RESULT IMAGE */}
+<div 
+    className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+    style={{
+        backgroundImage: `url('/demo/shoe-result.png')`,
+        opacity: demoStep === 'complete' ? 1 : 0
+    }}
+/>
     
     {/* 2. PROCESSING OVERLAY */}
     {demoStep === 'processing' && (
@@ -272,6 +281,7 @@ export const FeaturesSection: React.FC = () => {
         </section>
     );
 };
+
 
 
 
