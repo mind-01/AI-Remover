@@ -7,11 +7,12 @@ export const FeaturesSection: React.FC = () => {
 
     // ✅ ADDED: Live Demo Function
     const runLiveDemo = () => {
-        setDemoStep('processing');
-        setTimeout(() => {
-            setDemoStep('complete');
-        }, 2000);
-    };
+    alert("Demo clicked!");
+    setDemoStep('processing');
+    setTimeout(() => {
+        setDemoStep('complete');
+    }, 2000);
+};
 
     const resetDemo = () => {
         setDemoStep('idle');
@@ -281,6 +282,7 @@ export const FeaturesSection: React.FC = () => {
         </section>
     );
 };
+
 
 
 
