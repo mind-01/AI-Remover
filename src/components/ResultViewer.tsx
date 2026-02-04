@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronRight, Sparkles, Image as ImageIcon, Eraser, Trash2, Wand2, Sliders, Undo2, Redo2, Loader2, Palette, Maximize, ZoomIn } from 'lucide-react';
+import { ChevronRight, Sparkles, Image as ImageIcon, Eraser, Trash2, Wand2, Sliders, Undo2, Redo2, Loader2, Palette, Maximize, ZoomIn, Download, Scissors, Layers as LayersIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 
 interface ProcessingTask {
@@ -444,7 +445,7 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
         if (cursorRef.current && activeTab === 'cutout') {
             cursorRef.current.style.left = '0px';
             cursorRef.current.style.top = '0px';
-            cursorRef.current.style.transform = `translate(${clientX - brushSize / 2}px, ${clientY - brushSize / 2}px)`;
+            cursorRef.current.style.transform = `translate3d(${clientX - brushSize / 2}px, ${clientY - brushSize / 2}px, 0)`;
         }
 
         if (!isDrawing || activeTab !== 'cutout') return;
@@ -648,87 +649,137 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
     ];
 
     return (
-        <div className="max-w-full px-4 lg:px-8 py-4 flex flex-col gap-6 h-[calc(100vh-5rem)] overflow-hidden relative">
-            {/* Top Toolbar - Heightened Z-Index to prevent clipping */}
-            <div className="flex items-center justify-center w-full relative z-[60]">
-                <div className="bg-white/90 backdrop-blur-xl border border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-full px-2 py-1.5 flex items-center gap-1 lg:gap-3">
-                    {toolbarItems.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => setActiveTab(item.id as EditorTab)}
-                            className={cn(
-                                "flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 text-xs font-black uppercase tracking-tight",
-                                activeTab === item.id
-                                    ? "bg-blue-600 text-white shadow-lg shadow-blue-100 scale-105"
-                                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                            )}
-                        >
-                            {item.icon}
-                            <span className="hidden sm:inline">{item.label}</span>
-                        </button>
-                    ))}
+        <div className="fixed inset-0 z-[60] h-[100dvh] flex flex-col bg-white sm:bg-slate-50 overflow-hidden font-sans">
+            {/* Mobile Top Bar */}
+            <div className="lg:hidden flex-none flex items-center justify-between px-6 py-3 bg-white">
+                <button className="p-2 text-slate-800">
+                    <LayersIcon className="w-5 h-5" />
+                </button>
+                <div className="flex items-center gap-6">
+                    <button className="p-2 text-slate-400">
+                        <ZoomIn className="w-5 h-5" />
+                    </button>
+                    <button onClick={undo} className="p-2 text-slate-400">
+                        <Undo2 className="w-5 h-5" />
+                    </button>
+                    <button onClick={redo} className="p-2 text-slate-400">
+                        <Redo2 className="w-5 h-5" />
+                    </button>
+                </div>
+            </div>
 
-                    <div className="w-[1px] h-6 bg-slate-100 mx-2 hidden sm:block" />
-
-                    <div className="flex items-center gap-1 sm:gap-2 mr-2">
-                        <button onClick={undo} disabled={historyIndex <= 0} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-all disabled:opacity-20">
-                            <Undo2 className="w-4 h-4" />
-                        </button>
-                        <button onClick={redo} disabled={historyIndex >= history.length - 1} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-all disabled:opacity-20">
-                            <Redo2 className="w-4 h-4" />
-                        </button>
-                    </div>
-
-                    <div className="relative">
-                        <button
-                            onClick={() => setIsDownloadMenuOpen(!isDownloadMenuOpen)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-100 flex items-center gap-2 transition-all active:scale-95"
-                        >
-                            Download <ChevronRight className={cn("w-3 h-3 transition-transform", isDownloadMenuOpen && "rotate-90")} />
-                        </button>
-
-                        {isDownloadMenuOpen && (
-                            <div className="absolute top-full right-0 mt-4 bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-200 overflow-hidden z-[100] min-w-[240px] animate-in fade-in slide-in-from-top-4 duration-300">
-                                <div className="p-4 border-b border-slate-100 bg-slate-50/80 backdrop-blur-sm">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Select Download Quality</p>
-                                </div>
-                                <div className="p-2 bg-white">
-                                    {[{ id: 'high', label: 'High Definition', sub: 'Best for printing', scale: 1 }, { id: 'medium', label: 'Regular Quality', sub: 'Standard web use', scale: 0.7 }, { id: 'low', scale: 0.4, label: 'Small File', sub: 'Social sharing' }].map((opt) => (
-                                        <button
-                                            key={opt.id}
-                                            onClick={() => {
-                                                handleDownload(opt.scale);
-                                                setIsDownloadMenuOpen(false);
-                                            }}
-                                            className="w-full text-left p-4 hover:bg-blue-600 group rounded-2xl transition-all duration-200 mb-1 last:mb-0"
-                                        >
-                                            <div className="flex justify-between items-center mb-1">
-                                                <p className="text-[13px] font-black text-slate-800 group-hover:text-white transition-colors">{opt.label}</p>
-                                                <p className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg group-hover:bg-white/20 group-hover:text-white transition-all">
-                                                    {estimatedSizes[opt.id] || '...'}
-                                                </p>
-                                            </div>
-                                            <p className="text-[10px] font-bold text-slate-400 group-hover:text-blue-100 transition-colors uppercase tracking-tight">
-                                                {opt.sub}
-                                            </p>
-                                        </button>
-                                    ))}
-                                </div>
+            {/* Mobile Task Strip (Top) */}
+            <div className="lg:hidden flex-none flex items-center gap-3 px-4 py-2 overflow-x-auto no-scrollbar bg-white shadow-sm">
+                <button
+                    onClick={onReset}
+                    className="w-14 h-14 flex-shrink-0 bg-slate-50 rounded-xl flex items-center justify-center border-2 border-slate-100 text-slate-400"
+                >
+                    <div className="text-xl font-light">+</div>
+                </button>
+                {taskList.map((task) => (
+                    <button
+                        key={task.id}
+                        onClick={() => onSelectTask(task.id)}
+                        className={cn(
+                            "relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0",
+                            activeTaskId === task.id ? "border-blue-600" : "border-slate-100 opacity-60"
+                        )}
+                    >
+                        <img src={task.processedUrl || task.originalUrl} className="w-full h-full object-cover" alt="Task" />
+                        {activeTaskId === task.id && (
+                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                <Trash2 className="w-4 h-4 text-white bg-black/40 p-1 rounded-lg" />
                             </div>
                         )}
+                    </button>
+                ))}
+            </div>
+
+            <div className="flex-none hidden sm:flex items-center justify-between mt-4 mb-4 sm:mb-8 px-4 sm:px-0">
+                <div className="hidden sm:flex items-center gap-4">
+                    {/* Top Toolbar - Heightened Z-Index to prevent clipping */}
+                    <div className="flex items-center justify-center w-full relative z-[60]">
+                        <div className="bg-white/90 backdrop-blur-xl border border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-full px-2 py-1.5 flex items-center gap-1 lg:gap-3">
+                            {toolbarItems.map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActiveTab(item.id as EditorTab)}
+                                    className={cn(
+                                        "flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 text-xs font-black uppercase tracking-tight",
+                                        activeTab === item.id
+                                            ? "bg-blue-600 text-white shadow-lg shadow-blue-100 scale-105"
+                                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                                    )}
+                                >
+                                    {item.icon}
+                                    <span className="hidden sm:inline">{item.label}</span>
+                                </button>
+                            ))}
+
+                            <div className="w-[1px] h-6 bg-slate-100 mx-2 hidden sm:block" />
+
+                            <div className="flex items-center gap-1 sm:gap-2 mr-2">
+                                <button onClick={undo} disabled={historyIndex <= 0} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-all disabled:opacity-20">
+                                    <Undo2 className="w-4 h-4" />
+                                </button>
+                                <button onClick={redo} disabled={historyIndex >= history.length - 1} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-all disabled:opacity-20">
+                                    <Redo2 className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsDownloadMenuOpen(!isDownloadMenuOpen)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-100 flex items-center gap-2 transition-all active:scale-95"
+                                >
+                                    Download <ChevronRight className={cn("w-3 h-3 transition-transform", isDownloadMenuOpen && "rotate-90")} />
+                                </button>
+
+                                {isDownloadMenuOpen && (
+                                    <div className="absolute top-full right-0 mt-4 bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-200 overflow-hidden z-[100] min-w-[240px] animate-in fade-in slide-in-from-top-4 duration-300">
+                                        <div className="p-4 border-b border-slate-100 bg-slate-50/80 backdrop-blur-sm">
+                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Select Download Quality</p>
+                                        </div>
+                                        <div className="p-2 bg-white">
+                                            {[{ id: 'high', label: 'High Definition', sub: 'Best for printing', scale: 1 }, { id: 'medium', label: 'Regular Quality', sub: 'Standard web use', scale: 0.7 }, { id: 'low', scale: 0.4, label: 'Small File', sub: 'Social sharing' }].map((opt) => (
+                                                <button
+                                                    key={opt.id}
+                                                    onClick={() => {
+                                                        handleDownload(opt.scale);
+                                                        setIsDownloadMenuOpen(false);
+                                                    }}
+                                                    className="w-full text-left p-4 hover:bg-blue-600 group rounded-2xl transition-all duration-200 mb-1 last:mb-0"
+                                                >
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <p className="text-[13px] font-black text-slate-800 group-hover:text-white transition-colors">{opt.label}</p>
+                                                        <p className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg group-hover:bg-white/20 group-hover:text-white transition-all">
+                                                            {estimatedSizes[opt.id] || '...'}
+                                                        </p>
+                                                    </div>
+                                                    <p className="text-[10px] font-bold text-slate-400 group-hover:text-blue-100 transition-colors uppercase tracking-tight">
+                                                        {opt.sub}
+                                                    </p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-6 flex-grow overflow-hidden">
-                <div className="w-full lg:w-48 flex-shrink-0 flex lg:flex-col gap-3 overflow-x-auto lg:overflow-y-auto pr-2 custom-scrollbar">
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 flex-grow flex-shrink min-h-0 overflow-hidden px-0 sm:px-4">
+                {/* Desktop Task Strip (Sidebar) */}
+                <div className="hidden lg:flex w-48 flex-shrink-0 flex-col gap-2 overflow-y-auto pr-2 custom-scrollbar">
                     {taskList.map((task) => (
                         <button
                             key={task.id}
                             onClick={() => onSelectTask(task.id)}
                             className={cn(
-                                "relative w-23 h-23 lg:w-full lg:h-32 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 group",
-                                activeTaskId === task.id ? "border-blue-600 shadow-xl scale-102" : "border-slate-100 opacity-60 hover:opacity-100"
+                                "relative w-full h-32 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 group",
+                                activeTaskId === task.id ? "border-blue-600 shadow-lg scale-102" : "border-slate-100 opacity-60 hover:opacity-100"
                             )}
                         >
                             <img src={task.processedUrl || task.originalUrl} className="w-full h-full object-cover" alt="Task" />
@@ -736,8 +787,8 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                     ))}
                 </div>
 
-                <div className="flex-grow flex flex-col gap-4 min-w-0">
-                    <div className="flex-grow relative flex items-center justify-center bg-slate-100/50 rounded-[3rem] border border-slate-100 shadow-inner overflow-hidden group/editor">
+                <div className="flex-grow flex-shrink min-h-0 flex flex-col gap-4 min-w-0 lg:min-h-[400px]">
+                    <div className="flex-grow flex-shrink min-h-0 relative flex items-center justify-center bg-slate-100/50 sm:rounded-[3rem] border-y sm:border border-slate-100 shadow-inner overflow-hidden group/editor p-2 sm:p-4">
                         <div
                             className={cn(
                                 "relative overflow-hidden shadow-2xl flex items-center justify-center transition-all duration-300 rounded-[2.5rem]",
@@ -789,6 +840,7 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                         activeTab === 'cutout' ? "cursor-none" : "cursor-default",
                                         isProcessing && "opacity-80 grayscale-[0.5]"
                                     )}
+                                    style={{ touchAction: 'none' }}
                                 />
                             </div>
 
@@ -819,20 +871,162 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                             <canvas ref={selectionCanvasRef} className="hidden" />
 
                             {activeTab !== 'cutout' && (
-                                <div className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_20px_rgba(0,0,0,0.2)] z-40 pointer-events-none" style={{ left: `${sliderValue}%` }}>
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full shadow-xl flex items-center justify-center border-2 border-blue-600 opacity-0 group-hover/editor:opacity-100 transition-opacity">
-                                        <ChevronRight className="w-4 h-4 text-blue-600" />
+                                <>
+                                    <div className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_20px_rgba(0,0,0,0.2)] z-40 pointer-events-none" style={{ left: `${sliderValue}%` }}>
+                                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full shadow-xl flex items-center justify-center border-2 border-blue-600 opacity-0 group-hover/editor:opacity-100 transition-opacity">
+                                            <ChevronRight className="w-4 h-4 text-blue-600" />
+                                        </div>
+                                        <input type="range" min="0" max="100" value={sliderValue} onChange={(e) => setSliderValue(parseInt(e.target.value))} className="absolute inset-x-[-20px] top-0 bottom-0 opacity-0 cursor-col-resize z-50 pointer-events-auto" />
                                     </div>
-                                    <input type="range" min="0" max="100" value={sliderValue} onChange={(e) => setSliderValue(parseInt(e.target.value))} className="absolute inset-x-[-20px] top-0 bottom-0 opacity-0 cursor-col-resize z-50 pointer-events-auto" />
-                                </div>
+                                    <div className="absolute inset-x-0 bottom-4 text-center lg:hidden">
+                                        <p className="text-[9px] text-slate-500/40 leading-tight">Canva integration available in Background tab</p>
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>
                 </div>
 
-                <div className="w-full lg:w-80 flex-shrink-0 flex flex-col h-full">
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 flex flex-col h-full overflow-hidden">
-                        <div className="flex-grow p-6 space-y-6 overflow-y-auto no-scrollbar">
+                <div className="lg:hidden flex-none bg-white border-t border-slate-100 px-2 pb-safe z-50">
+                    <div className="w-full h-1 flex justify-center py-2">
+                        <div className="w-8 h-1 bg-slate-200 rounded-full" />
+                    </div>
+                    {/* Active Tool Panel (Slide-up context) */}
+                    <div className="relative overflow-hidden bg-white h-[140px]">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeTab}
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: 20, opacity: 0 }}
+                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                className="w-full h-full flex flex-col py-2"
+                            >
+                                {activeTab === 'cutout' && (
+                                    <div className="flex items-center gap-4 px-4 w-full h-full">
+                                        <button className={cn("p-2.5 rounded-xl border-2 transition-all flex-shrink-0", editMode === 'erase' ? "bg-blue-50 border-blue-200 text-blue-600" : "bg-slate-50 border-slate-100 text-slate-400")} onClick={() => setEditMode('erase')}><Eraser className="w-6 h-6" /></button>
+                                        <button className={cn("p-2.5 rounded-xl border-2 transition-all flex-shrink-0", editMode === 'restore' ? "bg-green-50 border-green-200 text-green-600" : "bg-slate-50 border-slate-100 text-slate-400")} onClick={() => setEditMode('restore')}><Wand2 className="w-6 h-6" /></button>
+                                        <div className="h-10 w-px bg-slate-100 mx-1 flex-shrink-0" />
+                                        <div className="flex-grow min-w-[120px]">
+                                            <input type="range" value={brushSize} min="10" max="150" onChange={(e) => setBrushSize(parseInt(e.target.value))} className="w-full h-2 accent-blue-600" />
+                                        </div>
+                                    </div>
+                                )}
+                                {activeTab === 'adjust' && (
+                                    <div className="flex flex-col justify-center gap-4 px-6 w-full h-full">
+                                        <div className="flex items-center gap-4">
+                                            <span className="w-16 text-[10px] font-black text-slate-400 uppercase tracking-tighter">Bright</span>
+                                            <input type="range" value={brightness} min="50" max="150" onChange={(e) => setBrightness(parseInt(e.target.value))} className="flex-grow h-2 accent-blue-600" />
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <span className="w-16 text-[10px] font-black text-slate-400 uppercase tracking-tighter">Contrast</span>
+                                            <input type="range" value={contrast} min="50" max="150" onChange={(e) => setContrast(parseInt(e.target.value))} className="flex-grow h-2 accent-blue-600" />
+                                        </div>
+                                    </div>
+                                )}
+                                {activeTab === 'background' && (
+                                    <div className="flex flex-col gap-3 px-4 w-full h-full overflow-hidden">
+                                        <div className="flex-none flex items-center justify-between gap-3">
+                                            <div className="flex-grow flex gap-1 p-0.5 bg-slate-100 rounded-lg">
+                                                {['photo', 'color'].map((tab) => (
+                                                    <button key={tab} onClick={() => setBgSubTab(tab as any)} className={cn("flex-grow py-1.5 rounded-md text-[10px] font-black uppercase transition-all", bgSubTab === tab ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>
+                                                        {tab}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <button
+                                                onClick={() => window.open('https://canva.com', '_blank')}
+                                                className="flex-shrink-0 bg-gradient-to-tr from-cyan-500 to-purple-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold flex items-center gap-2 active:scale-95 transition-all shadow-md"
+                                            >
+                                                <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[8px] font-black">C</div>
+                                                CANVA
+                                            </button>
+                                        </div>
+                                        <div className="flex-grow overflow-y-auto no-scrollbar scroll-smooth p-0.5">
+                                            {bgSubTab === 'photo' ? (
+                                                <div className="grid grid-cols-4 gap-2 pb-1">
+                                                    <button onClick={() => setBgImage(null)} className={cn("aspect-square rounded-lg border-2 flex items-center justify-center bg-slate-50", !bgImage ? "border-blue-600 shadow-sm" : "border-slate-100")}>
+                                                        <div className="text-[8px] font-black text-slate-400 uppercase">None</div>
+                                                    </button>
+                                                    {photoPresets.map((url, i) => (
+                                                        <button key={i} onClick={() => setBgImage(url)} className={cn("aspect-square rounded-lg border-2 overflow-hidden transition-all", bgImage === url ? "border-blue-600 shadow-md scale-95" : "border-slate-100")}>
+                                                            <img src={url} className="w-full h-full object-cover" alt="" />
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="grid grid-cols-6 gap-2 pb-1">
+                                                    {colorGridItems.map((item) => (
+                                                        <button
+                                                            key={item}
+                                                            onClick={() => {
+                                                                if (item === 'transparent') { setBgColor('transparent'); setBgImage(null); }
+                                                                else if (item === 'custom') colorPickerRef.current?.click();
+                                                                else { setBgColor(item); setBgImage(null); }
+                                                            }}
+                                                            className={cn("aspect-square rounded-full border-2 transition-all flex items-center justify-center", bgColor === item && !bgImage ? "border-blue-600 scale-105 shadow-md" : "border-slate-100")}
+                                                            style={{ background: item === 'custom' ? 'conic-gradient(red, yellow, green, cyan, blue, magenta, red)' : item === 'transparent' ? '#fff' : item }}
+                                                        >
+                                                            {item === 'transparent' && <div className="w-full h-[2px] bg-red-500 rotate-45 transform" />}
+                                                            {item === 'custom' && <Palette className="w-4 h-4 text-white drop-shadow-sm" />}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                                {activeTab === 'effects' && (
+                                    <div className="flex flex-col justify-center gap-4 px-6 w-full h-full">
+                                        <div className="flex items-center gap-4">
+                                            <button onClick={() => setIsBlurEnabled(!isBlurEnabled)} className={cn("flex-shrink-0 p-2 rounded-xl border-2 transition-all", isBlurEnabled ? "bg-blue-50 border-blue-200 text-blue-600 shadow-sm" : "bg-slate-50 border-slate-100 text-slate-400")}>
+                                                <Sparkles className="w-5 h-5" />
+                                            </button>
+                                            <input type="range" value={bgBlur} min="0" max="40" onChange={(e) => setBgBlur(parseInt(e.target.value))} disabled={!isBlurEnabled} className="flex-grow h-2 accent-blue-600" />
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <button onClick={() => setIsShadowEnabled(!isShadowEnabled)} className={cn("flex-shrink-0 p-2 rounded-xl border-2 transition-all", isShadowEnabled ? "bg-blue-50 border-blue-200 text-blue-600 shadow-sm" : "bg-slate-50 border-slate-100 text-slate-400")}>
+                                                <LayersIcon className="w-5 h-5" />
+                                            </button>
+                                            <input type="range" value={shadowOpacity} min="0" max="100" onChange={(e) => setShadowOpacity(parseInt(e.target.value))} disabled={!isShadowEnabled} className="flex-grow h-2 accent-blue-600" />
+                                        </div>
+                                        <div className="flex justify-center">
+                                            <button onClick={() => setIsReflectionEnabled(!isReflectionEnabled)} className={cn("px-6 py-2 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest transition-all", isReflectionEnabled ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200" : "bg-slate-50 border-slate-100 text-slate-400")}>
+                                                Reflection Effect
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Main Navigation Tabs */}
+                    <div className="flex justify-around items-center h-20 bg-white">
+                        <button onClick={() => setActiveTab('background')} className={cn("flex flex-col items-center gap-1.5 transition-all active:scale-95", activeTab === 'background' ? "text-blue-600" : "text-slate-400")}>
+                            <ImageIcon className="w-6 h-6" /><span className="text-[10px] font-bold">Background</span>
+                        </button>
+                        <button onClick={() => setActiveTab('cutout')} className={cn("flex flex-col items-center gap-1.5 transition-all active:scale-95", activeTab === 'cutout' ? "text-blue-600" : "text-slate-400")}>
+                            <Scissors className="w-6 h-6" /><span className="text-[10px] font-bold">Cutout</span>
+                        </button>
+                        <button onClick={() => handleDownload()} className="flex flex-col items-center gap-1.5 -translate-y-2">
+                            <div className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-xl shadow-blue-200 active:scale-90 transition-all">
+                                <Download className="w-6 h-6" />
+                            </div>
+                            <span className="text-[10px] font-bold text-blue-600">Download</span>
+                        </button>
+                        <button onClick={() => setActiveTab('adjust')} className={cn("flex flex-col items-center gap-1.5 transition-all active:scale-95", activeTab === 'adjust' ? "text-blue-600" : "text-slate-400")}>
+                            <Sliders className="w-6 h-6" /><span className="text-[10px] font-bold">Adjust</span>
+                        </button>
+                        <button onClick={() => setActiveTab('effects')} className={cn("flex flex-col items-center gap-1.5 transition-all active:scale-95", activeTab === 'effects' ? "text-blue-600" : "text-slate-400")}>
+                            <Wand2 className="w-6 h-6" /><span className="text-[10px] font-bold">Effects</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="hidden lg:flex w-full lg:w-80 flex-shrink-0 flex flex-col h-full">
+                    <div className="bg-white rounded-[1.5rem] sm:rounded-[2.5rem] shadow-2xl border border-slate-100 flex flex-col h-full overflow-hidden">
+                        <div className="flex-grow p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto no-scrollbar">
 
                             {activeTab === 'cutout' && (
                                 <section className="space-y-6 animate-in fade-in slide-in-from-right-4">

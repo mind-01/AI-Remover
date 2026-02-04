@@ -40,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({ isQualityBoost, onQualityBoostTo
                                 </div>
                                 <div className="flex flex-col">
                                     <span className={cn(
-                                        "text-[10px] sm:text-[11px] font-black uppercase tracking-wider leading-none mb-0.5",
+                                        "text-[10px] sm:text-[11px] font-black uppercase tracking-wider leading-none mb-0.5 hidden sm:inline-block",
                                         isQualityBoost ? "text-blue-700" : "text-slate-500"
                                     )}>
                                         AI Quality Booster

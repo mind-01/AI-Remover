@@ -1,24 +1,10 @@
-import React, { useState } from 'react';
-import { Zap, Shield, Image as ImageIcon, Download, CheckCircle2, Wand2, MousePointer2, Loader2 } from 'lucide-react';
+import React from 'react';
+import { Zap, Shield, Image as ImageIcon, Download, CheckCircle2, Wand2, MousePointer2 } from 'lucide-react';
 
 export const FeaturesSection: React.FC = () => {
-    // ✅ ADDED: Live Demo State
-    const [demoStep, setDemoStep] = useState<'idle' | 'processing' | 'complete'>('idle');
-
-    // ✅ ADDED: Live Demo Function
-    const runLiveDemo = () => {
-    setDemoStep('processing');
-    setTimeout(() => {
-        setDemoStep('complete');
-    }, 2000);
-};
-    const resetDemo = () => {
-        setDemoStep('idle');
-    };
-
     return (
         <section className="py-24 space-y-32">
-            {/* How it Works - वैसा ही है */}
+            {/* How it Works */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center space-y-4 mb-16">
                     <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest">Process</h2>
@@ -87,7 +73,6 @@ export const FeaturesSection: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* ✅ UPDATED: Live Demo Section */}
                         <div className="relative">
                             <div className="absolute -inset-4 bg-gradient-to-tr from-blue-600/20 to-transparent blur-2xl rounded-full" />
                             <div className="bg-slate-800/50 backdrop-blur-xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl relative">
@@ -105,140 +90,39 @@ export const FeaturesSection: React.FC = () => {
                                                 </span>
                                             </div>
                                         </div>
-
-                                        {/* ✅ DYNAMIC BUTTON */}
-                                        {demoStep === 'idle' && (
-                                            <button 
-                                                onClick={runLiveDemo}
-                                                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all border border-blue-500 hover:border-blue-400 shadow-lg shadow-blue-600/20"
-                                            >
-                                                Live Demo
-                                            </button>
-                                        )}
-                                        {demoStep === 'processing' && (
-                                            <button 
-                                                disabled
-                                                className="px-5 py-2.5 bg-slate-700 text-slate-400 text-[11px] font-black uppercase tracking-widest rounded-xl border border-slate-600 flex items-center gap-2"
-                                            >
-                                                <Loader2 className="w-3 h-3 animate-spin" />
-                                                Processing...
-                                            </button>
-                                        )}
-                                        {demoStep === 'complete' && (
-                                            <button 
-                                                onClick={resetDemo}
-                                                className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all border border-green-500"
-                                            >
-                                                Try Again
-                                            </button>
-                                        )}
+                                        <button className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all border border-white/10 hover:border-white/20">
+                                            Live Demo
+                                        </button>
                                     </div>
-                                    
-                                    {/* ✅ RESULT IMAGE CONTAINER - FIXED */}
-<div className="h-64 rounded-2xl bg-slate-900 border border-white/5 relative overflow-hidden">
 
-    {/* 1. ORIGINAL IMAGE */}
-<div 
-    className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
-    style={{
-        backgroundImage: `url('/demo/shoe-original.jpg')`,
-        opacity: demoStep === 'complete' ? 0 : 1
-    }}
-/>
+                                    <div className="h-64 rounded-2xl bg-slate-900 border border-white/5 relative overflow-hidden group">
+                                        <div
+                                            className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+                                            role="img"
+                                            aria-label="AI background removal demo showing red shoe with transparent background"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
+                                        <div className="absolute bottom-5 left-6 right-6">
+                                            <div className="flex justify-between items-end">
+                                                <div className="space-y-1">
+                                                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Efficiency</p>
+                                                    <p className="text-sm font-bold text-white tracking-tight">High-Precision Masking</p>
+                                                </div>
+                                                <div className="p-2 bg-blue-600 rounded-lg">
+                                                    <Shield className="w-4 h-4 text-blue-400" aria-label="Secure processing" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-{/* 2. RESULT IMAGE */}
-<div 
-    className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
-    style={{
-        backgroundImage: `url('/demo/shoe-result.png')`,
-        opacity: demoStep === 'complete' ? 1 : 0
-    }}
-/>
-    
-    {/* 2. PROCESSING OVERLAY */}
-    {demoStep === 'processing' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm z-20">
-            <div className="text-center space-y-3">
-                <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
-                <p className="text-xs font-black text-white uppercase tracking-widest">Removing Background...</p>
-            </div>
-        </div>
-    )}
-
-    {/* 3. RESULT - Checkered Background + Shoe */}
-    <div 
-        className={`absolute inset-0 transition-all duration-1000 ${
-            demoStep === 'complete' ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-        }`}
-    >
-        {/* 3a. Checkered Pattern Background */}
-        <div 
-            className="absolute inset-0"
-            style={{
-                backgroundImage: `
-                    linear-gradient(45deg, #e5e5e5 25%, transparent 25%), 
-                    linear-gradient(-45deg, #e5e5e5 25%, transparent 25%), 
-                    linear-gradient(45deg, transparent 75%, #e5e5e5 75%), 
-                    linear-gradient(-45deg, transparent 75%, #e5e5e5 75%)
-                `,
-                backgroundSize: '20px 20px',
-                backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
-                backgroundColor: '#ffffff'
-            }}
-        />
-        
-        {/* 3b. Shoe Image */}
-<div 
-    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-    style={{
-        backgroundImage: `url('/demo/shoe-result.png')`,  // ✅ CORRECT!
-        filter: 'brightness(1.1) contrast(1.2)'
-    }}
-/>
-    </div>
-    
-    {/* 4. Success Overlay */}
-    {demoStep === 'complete' && (
-        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-            <div className="text-center">
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg shadow-green-500/30">
-                    <CheckCircle2 className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-xs font-black text-white uppercase tracking-widest drop-shadow-lg">Done! 0.4s</p>
-            </div>
-        </div>
-    )}
-
-    {/* 5. Bottom Info */}
-    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none" />
-    <div className="absolute bottom-5 left-6 right-6 z-10">
-        <div className="flex justify-between items-end">
-            <div className="space-y-1">
-                <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Efficiency</p>
-                <p className="text-sm font-bold text-white tracking-tight">
-                    {demoStep === 'complete' ? 'Background Removed!' : 'High-Precision Masking'}
-                </p>
-            </div>
-            <div className="p-2 bg-blue-600 rounded-lg">
-                <Shield className="w-4 h-4 text-blue-400" aria-label="Secure processing" />
-            </div>
-        </div>
-    </div>
-</div>
-                                        
-                                    {/* Stats */}
                                     <div className="grid grid-cols-2 gap-4">
                                         {[
                                             { label: 'Speed', val: '0.4s' },
-                                            { label: 'Accuracy', val: demoStep === 'complete' ? '100%' : '99.9%' }
+                                            { label: 'Accuracy', val: '99.9%' }
                                         ].map(stat => (
                                             <div key={stat.label} className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col items-center">
                                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{stat.label}</span>
-                                                <span className={`text-xl font-black tracking-tight italic ${
-                                                    demoStep === 'complete' && stat.label === 'Accuracy' ? 'text-green-400' : 'text-white'
-                                                }`}>
-                                                    {stat.val}
-                                                </span>
+                                                <span className="text-xl font-black text-white tracking-tight italic">{stat.val}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -249,7 +133,7 @@ export const FeaturesSection: React.FC = () => {
                 </div>
             </div>
 
-            {/* SEO FAQ Section - वैसा ही है */}
+            {/* SEO FAQ Section */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center space-y-4 mb-16">
                     <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest italic flex items-center justify-center gap-2">
@@ -278,12 +162,3 @@ export const FeaturesSection: React.FC = () => {
         </section>
     );
 };
-
-
-
-
-
-
-
-
-

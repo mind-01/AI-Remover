@@ -21,9 +21,9 @@ export const Footer: React.FC = () => {
                         </p>
                         <div className="flex items-center space-x-4">
                             {/* ✅ FIXED: Added aria-label and proper href */}
-                            <a 
-                                href="https://twitter.com" 
-                                target="_blank" 
+                            <a
+                                href="https://twitter.com"
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 aria-label="Follow us on Twitter"
                                 className="p-2 bg-white rounded-lg text-slate-400 hover:text-blue-600 transition-all border border-slate-200 hover:border-blue-200 shadow-sm"
@@ -31,17 +31,17 @@ export const Footer: React.FC = () => {
                                 <Twitter className="w-4 h-4" />
                             </a>
                             {/* ✅ FIXED: Changed to # or your actual repo */}
-                            <a 
-                                href="#" 
-                                onClick={(e) => {e.preventDefault(); alert('GitHub repository coming soon!')}}
+                            <a
+                                href="#"
+                                onClick={(e) => { e.preventDefault(); alert('GitHub repository coming soon!') }}
                                 aria-label="View our GitHub"
                                 className="p-2 bg-white rounded-lg text-slate-400 hover:text-slate-900 transition-all border border-slate-200 hover:border-slate-300 shadow-sm"
                             >
                                 <Github className="w-4 h-4" />
                             </a>
                             {/* ✅ FIXED: Added aria-label */}
-                            <a 
-                                href="mailto:support@airemover.pro" 
+                            <a
+                                href="mailto:support@airemover.pro"
                                 aria-label="Email us at support@airemover.pro"
                                 className="p-2 bg-white rounded-lg text-slate-400 hover:text-red-500 transition-all border border-slate-200 hover:border-red-200 shadow-sm"
                             >
@@ -61,9 +61,9 @@ export const Footer: React.FC = () => {
                                 { name: 'Object Eraser', available: false }
                             ].map((item) => (
                                 <li key={item.name}>
-                                    <a 
+                                    <a
                                         href={item.available ? "/" : "#"}
-                                        onClick={!item.available ? (e) => {e.preventDefault(); alert(`${item.name} - Coming soon!`)} : undefined}
+                                        onClick={!item.available ? (e) => { e.preventDefault(); alert(`${item.name} - Coming soon!`) } : undefined}
                                         aria-label={item.name}
                                         className="text-sm text-slate-500 hover:text-blue-600 font-bold transition-colors flex items-center gap-2 group"
                                     >
@@ -86,9 +86,9 @@ export const Footer: React.FC = () => {
                                 { name: 'Blog', available: false }
                             ].map((item) => (
                                 <li key={item.name}>
-                                    <a 
+                                    <a
                                         href={item.available ? "#how-it-works" : "#"}
-                                        onClick={!item.available ? (e) => {e.preventDefault(); alert(`${item.name} - Coming soon!`)} : undefined}
+                                        onClick={!item.available ? (e) => { e.preventDefault(); alert(`${item.name} - Coming soon!`) } : undefined}
                                         aria-label={item.name}
                                         className="text-sm text-slate-500 hover:text-blue-600 font-bold transition-colors flex items-center gap-2 group"
                                     >
@@ -110,9 +110,9 @@ export const Footer: React.FC = () => {
                                 { name: 'Help Center', icon: Globe, available: false }
                             ].map((item) => (
                                 <li key={item.name}>
-                                    <a 
+                                    <a
                                         href="#"
-                                        onClick={(e) => {e.preventDefault(); alert(`${item.name} - Coming soon!`)}}
+                                        onClick={(e) => { e.preventDefault(); alert(`${item.name} - Coming soon!`) }}
                                         aria-label={item.name}
                                         className="text-sm text-slate-500 hover:text-blue-600 font-bold transition-colors flex items-center gap-2 group"
                                     >
