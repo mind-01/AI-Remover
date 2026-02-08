@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Github, ImageIcon, Eraser } from 'lucide-react';
+import { Layers, Github, ImageIcon, Eraser, Sparkles } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface HeaderProps {
@@ -20,10 +20,14 @@ export const Header: React.FC<HeaderProps> = ({
                         onClick={() => onViewChange?.('remover')}
                     >
                         <div className="p-2.5 bg-blue-600 rounded-xl shadow-lg shadow-blue-200 group-hover:scale-105 transition-all duration-300">
-                            <Layers className="w-5 h-5 text-white" />
+                            {currentView === 'enhancer' ? (
+                                <Sparkles className="w-5 h-5 text-white" />
+                            ) : (
+                                <Layers className="w-5 h-5 text-white" />
+                            )}
                         </div>
                         <span className="text-xl font-black text-slate-800 tracking-tight">
-                            AI Remover <span className="text-blue-600">PRO</span>
+                            AI {currentView === 'enhancer' ? 'Enhancer' : 'Remover'} <span className="text-blue-600">PRO</span>
                         </span>
                     </div>
 
