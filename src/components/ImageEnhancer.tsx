@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import Upscaler from 'upscaler';
 import { Download, Sparkles, Loader2, Image as ImageIcon, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -18,6 +18,11 @@ export function ImageEnhancer({ onBack }: ImageEnhancerProps) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
+
+    // Persist upscaler instance to avoid WebGL context loss from recreation
+    const upscaler = useMemo(() => new Upscaler({
+        model: esrganSlim,
+    }), []);
 
     // Cleanup URLs on unmount
     useEffect(() => {
@@ -44,9 +49,9 @@ export function ImageEnhancer({ onBack }: ImageEnhancerProps) {
 
             img.onload = () => {
                 const maxDim = Math.max(img.width, img.height);
-                if (maxDim > 2000) {
+                if (maxDim > 1500) {
                     URL.revokeObjectURL(objectUrl);
-                    setError(`Image is too large (${img.width}x${img.height}). Please use an image smaller than 2000px.`);
+                    setError(`Image is too large (${img.width}x${img.height}). For stable processing, please use an image smaller than 1500px.`);
                     return;
                 }
 
@@ -87,10 +92,6 @@ export function ImageEnhancer({ onBack }: ImageEnhancerProps) {
         setError(null);
 
         try {
-            const upscaler = new Upscaler({
-                model: esrganSlim,
-            });
-
             const refinedUrl = await upscaler.execute(originalImage, {
                 patchSize: 64,
                 padding: 2,
@@ -104,10 +105,14 @@ export function ImageEnhancer({ onBack }: ImageEnhancerProps) {
             setEnhancedImage(refinedUrl);
         } catch (err: any) {
             console.error("Upscaling failed:", err);
-            if (err?.message?.includes('buffer allocation') || err?.message?.includes('context lost')) {
-                setError("Memory Exhausted: The image is too large for your browser to process. Please try an even smaller image.");
+            const errMsg = err?.message || String(err);
+            if (errMsg.toLowerCase().includes('buffer') ||
+                errMsg.toLowerCase().includes('allocation') ||
+                errMsg.toLowerCase().includes('context lost') ||
+                errMsg.toLowerCase().includes('memory')) {
+                setError("Memory Exhausted: This image requires too much memory for your browser. Try a smaller image (under 1000px).");
             } else {
-                setError("Failed to enhance image. Please try a smaller image.");
+                setError(`Enhancement failed: ${errMsg.slice(0, 100)}${errMsg.length > 100 ? '...' : ''}`);
             }
         } finally {
             setIsProcessing(false);
