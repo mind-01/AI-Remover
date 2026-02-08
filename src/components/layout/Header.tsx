@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Github, Sparkles, Info, ImageIcon, Eraser } from 'lucide-react';
+import { Layers, Github, Sparkles, ImageIcon, Eraser } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface HeaderProps {
