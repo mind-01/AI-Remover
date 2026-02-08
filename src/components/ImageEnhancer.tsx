@@ -6,7 +6,7 @@ import { cn } from "../lib/utils";
 import { useDropzone } from 'react-dropzone';
 
 // We need to import the model path correctly based on how Vite handles public assets or node_modules
-import * as esrganSlim from '@upscalerjs/esrgan-slim';
+import { x2 as esrganSlim } from '@upscalerjs/esrgan-slim';
 
 interface ImageEnhancerProps {
     onBack: () => void;

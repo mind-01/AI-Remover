@@ -23,6 +23,8 @@ declare module 'upscaler' {
 }
 
 declare module '@upscalerjs/esrgan-slim' {
-    const model: any;
-    export default model;
+    export const x2: any;
+    export const x3: any;
+    export const x4: any;
+    export const x8: any;
 }
