@@ -1,8 +1,7 @@
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import Upscaler from 'upscaler';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Download, Sparkles, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Download, Sparkles, Loader2, Image as ImageIcon, ArrowLeft } from 'lucide-react';
 import { cn } from "../lib/utils";
 import { useDropzone } from 'react-dropzone';
 
