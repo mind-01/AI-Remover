@@ -9,6 +9,7 @@ import { ProcessingView } from './components/ProcessingView';
 import { ResultViewer } from './components/ResultViewer';
 import { FeaturesSection } from './components/FeaturesSection';
 import { Footer } from './components/layout/Footer';
+import { ImageEnhancer } from './components/ImageEnhancer';
 
 interface ProcessingTask {
   id: string;
@@ -137,40 +138,68 @@ function App() {
     setError(null);
   };
 
-  const activeTask = tasks.find(t => t.id === activeTaskId);
+  const [currentView, setCurrentView] = useState<'remover' | 'enhancer'>('remover');
+
+  const [activeTask, setActiveTask] = useState<ProcessingTask | undefined>(undefined);
   const isAnyProcessing = tasks.some(t => t.status === 'processing' || t.status === 'pending');
+
+  // Sync active task from activeTaskId
+  if (activeTaskId && !activeTask) {
+    const task = tasks.find(t => t.id === activeTaskId);
+    if (task) setActiveTask(task);
+  } else if (!activeTaskId && activeTask) {
+    setActiveTask(undefined);
+  }
+
+  // Update effect to keep activeTask in sync when tasks change
+  if (activeTaskId && activeTask) {
+    const updatedTask = tasks.find(t => t.id === activeTaskId);
+    if (updatedTask && updatedTask !== activeTask) {
+      setActiveTask(updatedTask);
+    }
+  }
 
   return (
     <div className="min-h-screen text-slate-900 overflow-x-hidden font-sans bg-[#fcfcfd]">
       <Header
         isQualityBoost={isQualityBoost}
         onQualityBoostToggle={() => setIsQualityBoost(!isQualityBoost)}
+        currentView={currentView}
+        onViewChange={setCurrentView}
       />
 
       <main className="pt-20">
         <AnimatePresence mode="wait">
-          {tasks.length === 0 ? (
-            <motion.div key="hero" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}>
-              <Hero onFilesSelect={handleFilesSelect} />
-              <FeaturesSection />
+          {currentView === 'enhancer' ? (
+            <motion.div key="enhancer" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <ImageEnhancer onBack={() => setCurrentView('remover')} />
             </motion.div>
+          ) : (
+            <>
+              {tasks.length === 0 ? (
+                <motion.div key="hero" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}>
+                  <Hero onFilesSelect={handleFilesSelect} />
+                  <FeaturesSection />
+                </motion.div>
 
-          ) : isAnyProcessing && !activeTask?.processedUrl ? (
-            <motion.div key="processing" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }}>
-              <ProcessingView progress={tasks.reduce((acc, t) => acc + t.progress, 0) / (tasks.length || 1)} />
-            </motion.div>
-          ) : activeTask && activeTask.processedUrl ? (
-            <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <ResultViewer
-                originalUrl={activeTask.originalUrl}
-                processedUrl={activeTask.processedUrl}
-                onReset={handleReset}
-                taskList={tasks}
-                activeTaskId={activeTaskId || ""}
-                onSelectTask={setActiveTaskId}
-              />
-            </motion.div>
-          ) : null}
+              ) : isAnyProcessing && !activeTask?.processedUrl ? (
+                <motion.div key="processing" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }}>
+                  <ProcessingView progress={tasks.reduce((acc, t) => acc + t.progress, 0) / (tasks.length || 1)} />
+                </motion.div>
+              ) : activeTask && activeTask.processedUrl ? (
+                <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <ResultViewer
+                    originalUrl={activeTask.originalUrl}
+                    processedUrl={activeTask.processedUrl}
+                    onReset={handleReset}
+                    taskList={tasks}
+                    activeTaskId={activeTaskId || ""}
+                    onSelectTask={setActiveTaskId}
+                  />
+                </motion.div>
+              ) : null}
+            </>
+          )}
         </AnimatePresence>
 
         {error && (
