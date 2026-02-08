@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Upscaler from 'upscaler';
 import { Download, Sparkles, Loader2, Image as ImageIcon, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -19,20 +19,57 @@ export function ImageEnhancer({ onBack }: ImageEnhancerProps) {
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
+    // Cleanup URLs on unmount
+    useEffect(() => {
+        return () => {
+            if (originalImage) URL.revokeObjectURL(originalImage);
+            if (enhancedImage) URL.revokeObjectURL(enhancedImage);
+        };
+    }, []);
+
     const onDrop = useCallback(async (acceptedFiles: File[]) => {
         const file = acceptedFiles[0];
         if (!file) return;
 
+        // Check file size (Max 5MB for safety with upscaling)
+        if (file.size > 5 * 1024 * 1024) {
+            setError("Image size too large. Please use a file under 5MB.");
+            return;
+        }
+
         try {
-            const url = URL.createObjectURL(file);
-            setOriginalImage(url);
-            setEnhancedImage(null);
-            setError(null);
+            // Get image dimensions
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(file);
+
+            img.onload = () => {
+                const maxDim = Math.max(img.width, img.height);
+                if (maxDim > 2000) {
+                    URL.revokeObjectURL(objectUrl);
+                    setError(`Image is too large (${img.width}x${img.height}). Please use an image smaller than 2000px.`);
+                    return;
+                }
+
+                // Cleanup old URL
+                if (originalImage) URL.revokeObjectURL(originalImage);
+                if (enhancedImage) URL.revokeObjectURL(enhancedImage);
+
+                setOriginalImage(objectUrl);
+                setEnhancedImage(null);
+                setError(null);
+            };
+
+            img.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                setError("Failed to load image metadata");
+            };
+
+            img.src = objectUrl;
         } catch (err) {
             console.error(err);
             setError("Failed to load image");
         }
-    }, []);
+    }, [originalImage, enhancedImage]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
@@ -62,10 +99,16 @@ export function ImageEnhancer({ onBack }: ImageEnhancerProps) {
                 }
             });
 
+            // Cleanup old enhanced image if exists
+            if (enhancedImage) URL.revokeObjectURL(enhancedImage);
             setEnhancedImage(refinedUrl);
-        } catch (err) {
+        } catch (err: any) {
             console.error("Upscaling failed:", err);
-            setError("Failed to enhance image. Please try a smaller image.");
+            if (err?.message?.includes('buffer allocation') || err?.message?.includes('context lost')) {
+                setError("Memory Exhausted: The image is too large for your browser to process. Please try an even smaller image.");
+            } else {
+                setError("Failed to enhance image. Please try a smaller image.");
+            }
         } finally {
             setIsProcessing(false);
         }
@@ -154,7 +197,11 @@ export function ImageEnhancer({ onBack }: ImageEnhancerProps) {
                     <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
                         <div className="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                             <button
-                                onClick={onBack}
+                                onClick={() => {
+                                    if (originalImage) URL.revokeObjectURL(originalImage);
+                                    if (enhancedImage) URL.revokeObjectURL(enhancedImage);
+                                    onBack();
+                                }}
                                 className="flex items-center gap-2 text-slate-600 hover:text-blue-600 font-bold transition-colors text-sm"
                             >
                                 <ArrowLeft className="w-4 h-4" />
@@ -166,6 +213,8 @@ export function ImageEnhancer({ onBack }: ImageEnhancerProps) {
                             </div>
                             <button
                                 onClick={() => {
+                                    if (originalImage) URL.revokeObjectURL(originalImage);
+                                    if (enhancedImage) URL.revokeObjectURL(enhancedImage);
                                     setOriginalImage(null);
                                     setEnhancedImage(null);
                                 }}
