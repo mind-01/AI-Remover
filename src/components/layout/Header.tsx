@@ -1,17 +1,13 @@
 import React from 'react';
-import { Layers, Github, Sparkles, ImageIcon, Eraser } from 'lucide-react';
+import { Layers, Github, ImageIcon, Eraser } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface HeaderProps {
-    isQualityBoost: boolean;
-    onQualityBoostToggle: () => void;
     currentView?: 'remover' | 'enhancer';
     onViewChange?: (view: 'remover' | 'enhancer') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-    isQualityBoost,
-    onQualityBoostToggle,
     currentView = 'remover',
     onViewChange
 }) => {
@@ -57,53 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
                             </button>
                         </div>
 
-                        {/* Only show Quality Boost Toggle in Remover View */}
-                        {currentView === 'remover' && (
-                            <div
-                                className={cn(
-                                    "flex items-center gap-2 sm:gap-4 px-3 sm:px-5 py-2 sm:py-2.5 rounded-2xl transition-all duration-500 border relative group/toggle select-none",
-                                    isQualityBoost
-                                        ? "bg-blue-50/50 border-blue-100 shadow-[0_0_20px_rgba(37,99,235,0.05)]"
-                                        : "bg-slate-50/50 border-slate-200"
-                                )}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={cn(
-                                        "p-1.5 rounded-lg transition-colors duration-300",
-                                        isQualityBoost ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"
-                                    )}>
-                                        <Sparkles className="w-4 h-4" />
-                                    </div>
-                                    <div className="flex flex-col hidden sm:flex">
-                                        <span className={cn(
-                                            "text-[10px] sm:text-[11px] font-black uppercase tracking-wider leading-none mb-0.5",
-                                            isQualityBoost ? "text-blue-700" : "text-slate-500"
-                                        )}>
-                                            AI Quality Booster
-                                        </span>
-                                        <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
-                                            {isQualityBoost ? 'Enhanced HD Refinement' : 'Standard Processor'}
-                                        </span>
-                                    </div>
-                                </div>
 
-                                <label className="relative inline-flex items-center cursor-pointer ml-2">
-                                    <input
-                                        type="checkbox"
-                                        className="sr-only peer"
-                                        checked={isQualityBoost}
-                                        onChange={onQualityBoostToggle}
-                                    />
-                                    <div className={cn(
-                                        "w-11 h-6 bg-slate-200 rounded-full peer transition-all duration-300",
-                                        "peer-checked:bg-blue-600",
-                                        "after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm",
-                                        "peer-checked:after:translate-x-5",
-                                        "shadow-inner"
-                                    )}></div>
-                                </label>
-                            </div>
-                        )}
 
                         <div className="hidden lg:flex items-center space-x-6 text-sm font-bold tracking-tight">
                             <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-slate-50 rounded-xl text-slate-400 hover:text-slate-900 transition-all border border-slate-100">

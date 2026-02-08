@@ -1,7 +1,11 @@
 import React from 'react';
 import { Layers, Github, Twitter, Mail, Shield, Lock, Globe, Sparkles } from 'lucide-react';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+    onViewChange?: (view: 'remover' | 'enhancer') => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onViewChange }) => {
     return (
         <footer className="bg-slate-50 border-t border-slate-200 pt-20 pb-10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -55,20 +59,33 @@ export const Footer: React.FC = () => {
                         <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-6">Online Tools</h4>
                         <ul className="space-y-4">
                             {[
-                                { name: 'Background Remover', available: true },
-                                { name: 'Image Quality Booster', available: false },
+                                { name: 'Background Remover', view: 'remover' as const, available: true },
+                                { name: 'Image Enhancer', view: 'enhancer' as const, available: true },
                                 { name: 'Transparent PNG Maker', available: false },
                                 { name: 'Object Eraser', available: false }
                             ].map((item) => (
                                 <li key={item.name}>
                                     <a
-                                        href={item.available ? "/" : "#"}
-                                        onClick={!item.available ? (e) => { e.preventDefault(); alert(`${item.name} - Coming soon!`) } : undefined}
+                                        href={item.available ? "#" : "#"}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            if (item.available && 'view' in item && onViewChange) {
+                                                onViewChange(item.view as 'remover' | 'enhancer');
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                            } else if (!item.available) {
+                                                alert(`${item.name} - Coming soon!`);
+                                            }
+                                        }}
                                         aria-label={item.name}
-                                        className="text-sm text-slate-500 hover:text-blue-600 font-bold transition-colors flex items-center gap-2 group"
+                                        className="text-sm text-slate-500 hover:text-blue-600 font-bold transition-colors flex items-center gap-2 group cursor-pointer"
                                     >
                                         <div className="w-1 h-1 bg-slate-300 rounded-full group-hover:bg-blue-600 transition-colors" />
                                         {item.name}
+                                        {item.name === 'Image Enhancer' && (
+                                            <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-black uppercase tracking-wide">
+                                                New
+                                            </span>
+                                        )}
                                     </a>
                                 </li>
                             ))}

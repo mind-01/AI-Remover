@@ -25,7 +25,7 @@ function App() {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [isQualityBoost, setIsQualityBoost] = useState(false);
+
 
   const refineImage = useCallback((blob: Blob): Promise<Blob> => {
     return new Promise((resolve) => {
@@ -43,7 +43,7 @@ function App() {
         const data = imageData.data;
         const outData = new Uint8ClampedArray(data);
 
-        const strength = isQualityBoost ? 1.5 : 0.8;
+        const strength = 0.8;
 
         for (let y = 1; y < height - 1; y++) {
           for (let x = 1; x < width - 1; x++) {
@@ -63,7 +63,7 @@ function App() {
           }
         }
 
-        const ghostThreshold = isQualityBoost ? 110 : 70;
+        const ghostThreshold = 70;
         for (let i = 0; i < outData.length; i += 4) {
           if (outData[i + 3] < ghostThreshold) outData[i + 3] = 0;
         }
@@ -84,7 +84,7 @@ function App() {
       };
       img.src = URL.createObjectURL(blob);
     });
-  }, [isQualityBoost]);
+  }, []);
 
   const processFile = useCallback(async (task: ProcessingTask) => {
     setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'processing', progress: 0 } : t));
@@ -162,8 +162,6 @@ function App() {
   return (
     <div className="min-h-screen text-slate-900 overflow-x-hidden font-sans bg-[#fcfcfd]">
       <Header
-        isQualityBoost={isQualityBoost}
-        onQualityBoostToggle={() => setIsQualityBoost(!isQualityBoost)}
         currentView={currentView}
         onViewChange={setCurrentView}
       />
@@ -209,7 +207,7 @@ function App() {
         )}
       </main>
 
-      <Footer />
+      <Footer onViewChange={setCurrentView} />
       <Analytics />
       <SpeedInsights />
     </div>
