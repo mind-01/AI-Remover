@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { Zap, Shield, Image as ImageIcon, Download, CheckCircle2, Wand2, MousePointer2, Loader2 } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { translations } from '../lib/translations';
 
 export const FeaturesSection: React.FC = () => {
+    const { language } = useLanguage();
+    const t = translations[language] || translations.en;
+
     // ✅ ADDED: Live Demo State
     const [demoStep, setDemoStep] = useState<'idle' | 'processing' | 'complete'>('idle');
 
@@ -20,30 +25,30 @@ export const FeaturesSection: React.FC = () => {
     return (
         <section className="py-24 space-y-32">
             {/* How it Works - वैसा ही है */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div id="how-it-works" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-32">
                 <div className="text-center space-y-4 mb-16">
-                    <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest">Process</h2>
-                    <h3 className="text-4xl font-black text-slate-800 tracking-tight">How to remove background in seconds</h3>
-                    <p className="text-lg text-slate-500 max-w-2xl mx-auto font-medium">
-                        Our advanced AI identifies subjects automatically and provides professional cutouts instantly.
+                    <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest">{t.features.process}</h2>
+                    <h3 className="text-4xl font-black text-slate-800 tracking-tight dark:text-white">{t.features.howToTitle}</h3>
+                    <p className="text-lg text-slate-500 max-w-2xl mx-auto font-medium dark:text-slate-400">
+                        {t.features.howToDesc}
                     </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {[
-                        { step: '01', title: 'Upload Image', desc: 'Drag and drop your JPG or PNG image into the uploader. We support all common formats.', icon: ImageIcon },
-                        { step: '02', title: 'AI Processing', desc: 'State-of-the-art AI removes the background with 100% precision in under 5 seconds.', icon: Wand2 },
-                        { step: '03', title: 'Download Result', desc: 'Get your high-quality transparent PNG file ready for use in any project.', icon: Download },
+                        { step: '01', title: t.features.uploadTitle, desc: t.features.uploadDesc, icon: ImageIcon },
+                        { step: '02', title: t.features.aiTitle, desc: t.features.aiDesc, icon: Wand2 },
+                        { step: '03', title: t.features.downloadTitle, desc: t.features.downloadDesc, icon: Download },
                     ].map((item, idx) => (
-                        <div key={idx} className="relative p-10 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100/50 hover:scale-[1.02] transition-all duration-300 group">
-                            <div className="absolute top-8 right-10 text-6xl font-black text-slate-50 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity uppercase italic">
-                                Step {item.step}
+                        <div key={idx} className="relative p-10 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100/50 hover:scale-[1.02] transition-all duration-300 group dark:bg-slate-900 dark:border-slate-800 dark:shadow-none">
+                            <div className="absolute top-8 right-10 text-6xl font-black text-slate-50 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity uppercase italic dark:text-slate-700">
+                                {t.features.step} {item.step}
                             </div>
-                            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300 shadow-sm border border-blue-100">
+                            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300 shadow-sm border border-blue-100 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400">
                                 <item.icon className="w-6 h-6" aria-label={item.title} />
                             </div>
-                            <h4 className="text-xl font-black text-slate-800 mb-2">{item.title}</h4>
-                            <p className="text-slate-500 text-sm leading-relaxed font-medium">{item.desc}</p>
+                            <h4 className="text-xl font-black text-slate-800 mb-2 dark:text-white">{item.title}</h4>
+                            <p className="text-slate-500 text-sm leading-relaxed font-medium dark:text-slate-400">{item.desc}</p>
                         </div>
                     ))}
                 </div>
@@ -58,22 +63,21 @@ export const FeaturesSection: React.FC = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
                         <div className="space-y-10">
                             <div className="space-y-4">
-                                <h2 className="text-sm font-black text-blue-400 uppercase tracking-widest">Why Choose Us</h2>
+                                <h2 className="text-sm font-black text-blue-400 uppercase tracking-widest">{t.features.whyTitle}</h2>
                                 <h3 className="text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
-                                    Professional Results<br />
-                                    <span className="text-blue-400 underline decoration-blue-500 underline-offset-8">Without the Effort</span>
+                                    {t.features.whyHeading}
                                 </h3>
                                 <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-lg">
-                                    Stop wasting hours in Photoshop. Our AI background remover gives you pixel-perfect cutouts with zero complexity.
+                                    {t.features.whyDesc}
                                 </p>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 {[
-                                    { title: '100% Automatic', desc: 'No pixel selection needed' },
-                                    { title: 'High Definition', desc: 'Preserves every detail' },
-                                    { title: 'Smart Detection', desc: 'Perfect for hair & fur' },
-                                    { title: 'Privacy First', desc: 'Files are never stored' },
+                                    { title: t.features.autoTitle, desc: t.features.autoDesc },
+                                    { title: t.features.hdTitle, desc: t.features.hdDesc },
+                                    { title: t.features.smartTitle, desc: t.features.smartDesc },
+                                    { title: t.features.privacyTitle, desc: t.features.privacyDesc },
                                 ].map((item, idx) => (
                                     <div key={idx} className="flex items-start gap-4">
                                         <div className="p-1 px-2.5 rounded-lg border border-blue-500/20 bg-blue-500/10 mt-1">
@@ -99,50 +103,49 @@ export const FeaturesSection: React.FC = () => {
                                                 <Zap className="w-5 h-5 text-white" aria-label="AI powered" />
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-xs font-black text-white uppercase tracking-wider">AI Analysis</span>
+                                                <span className="text-xs font-black text-white uppercase tracking-wider">{t.features.aiAnalysis}</span>
                                                 <span className="text-[10px] text-green-400 font-bold uppercase tracking-widest mt-0.5 flex items-center gap-1.5">
                                                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                                                    Online
+                                                    {t.features.online}
                                                 </span>
                                             </div>
                                         </div>
 
                                         {/* ✅ DYNAMIC BUTTONS */}
                                         {demoStep === 'idle' && (
-                                            <button 
+                                            <button
                                                 onClick={runLiveDemo}
                                                 className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all border border-blue-500 hover:border-blue-400 shadow-lg shadow-blue-600/20"
                                             >
-                                                Live Demo
+                                                {t.features.liveDemo}
                                             </button>
                                         )}
                                         {demoStep === 'processing' && (
-                                            <button 
+                                            <button
                                                 disabled
                                                 className="px-5 py-2.5 bg-slate-700 text-slate-400 text-[11px] font-black uppercase tracking-widest rounded-xl border border-slate-600 flex items-center gap-2"
                                             >
                                                 <Loader2 className="w-3 h-3 animate-spin" />
-                                                Processing...
+                                                {t.common.processing}
                                             </button>
                                         )}
                                         {demoStep === 'complete' && (
-                                            <button 
+                                            <button
                                                 onClick={resetDemo}
                                                 className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all border border-green-500"
                                             >
-                                                Try Again
+                                                {t.features.tryAgain}
                                             </button>
                                         )}
                                     </div>
 
                                     {/* ✅ DYNAMIC IMAGE CONTAINER - CHECKERED BG + TRANSPARENT SHOE */}
                                     <div className="h-64 rounded-2xl bg-slate-900 border border-white/5 relative overflow-hidden">
-                                        
+
                                         {/* CHECKERED BACKGROUND - Visible when complete */}
-                                        <div 
-                                            className={`absolute inset-0 transition-opacity duration-1000 ${
-                                                demoStep === 'complete' ? 'opacity-100' : 'opacity-0'
-                                            }`}
+                                        <div
+                                            className={`absolute inset-0 transition-opacity duration-1000 ${demoStep === 'complete' ? 'opacity-100' : 'opacity-0'
+                                                }`}
                                             style={{
                                                 backgroundImage: `
                                                     linear-gradient(45deg, #e5e5e5 25%, transparent 25%), 
@@ -157,7 +160,7 @@ export const FeaturesSection: React.FC = () => {
                                         />
 
                                         {/* 1. ORIGINAL IMAGE */}
-                                        <div 
+                                        <div
                                             className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
                                             style={{
                                                 backgroundImage: `url('/demo/shoe-original.jpg')`,
@@ -166,24 +169,23 @@ export const FeaturesSection: React.FC = () => {
                                         />
 
                                         {/* 2. RESULT IMAGE - Centered IMG tag */}
-                                        <div 
-                                            className={`absolute inset-0 flex items-center justify-center transition-all duration-1000 ${
-                                                demoStep === 'complete' ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                                            }`}
+                                        <div
+                                            className={`absolute inset-0 flex items-center justify-center transition-all duration-1000 ${demoStep === 'complete' ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                                                }`}
                                         >
-                                            <img 
-                                                src="/demo/shoe-result.png" 
+                                            <img
+                                                src="/demo/shoe-result.png"
                                                 alt="Shoe with transparent background"
                                                 className="max-w-[90%] max-h-[90%] object-contain drop-shadow-2xl"
                                             />
                                         </div>
-                                        
+
                                         {/* 3. PROCESSING OVERLAY */}
                                         {demoStep === 'processing' && (
                                             <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm z-20">
                                                 <div className="text-center space-y-3">
                                                     <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
-                                                    <p className="text-xs font-black text-white uppercase tracking-widest">Removing Background...</p>
+                                                    <p className="text-xs font-black text-white uppercase tracking-widest">{t.common.processing}</p>
                                                 </div>
                                             </div>
                                         )}
@@ -193,9 +195,9 @@ export const FeaturesSection: React.FC = () => {
                                         <div className="absolute bottom-5 left-6 right-6 z-10">
                                             <div className="flex justify-between items-end">
                                                 <div className="space-y-1">
-                                                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Efficiency</p>
+                                                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{t.features.demoEfficiency}</p>
                                                     <p className="text-sm font-bold text-white tracking-tight">
-                                                        {demoStep === 'complete' ? 'Background Removed!' : 'High-Precision Masking'}
+                                                        {demoStep === 'complete' ? t.features.demoRemoved : t.features.demoPrecision}
                                                     </p>
                                                 </div>
                                                 <div className="p-2 bg-blue-600 rounded-lg">
@@ -208,14 +210,13 @@ export const FeaturesSection: React.FC = () => {
                                     {/* Stats */}
                                     <div className="grid grid-cols-2 gap-4">
                                         {[
-                                            { label: 'Speed', val: '0.4s' },
-                                            { label: 'Accuracy', val: demoStep === 'complete' ? '100%' : '99.9%' }
+                                            { label: t.features.demoSpeed, val: '0.4s' },
+                                            { label: t.features.demoAccuracy, val: demoStep === 'complete' ? '100%' : '99.9%' }
                                         ].map(stat => (
                                             <div key={stat.label} className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col items-center">
                                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{stat.label}</span>
-                                                <span className={`text-xl font-black tracking-tight italic ${
-                                                    demoStep === 'complete' && stat.label === 'Accuracy' ? 'text-green-400' : 'text-white'
-                                                }`}>
+                                                <span className={`text-xl font-black tracking-tight italic ${demoStep === 'complete' && stat.label === t.features.demoAccuracy ? 'text-green-400' : 'text-white'
+                                                    }`}>
                                                     {stat.val}
                                                 </span>
                                             </div>
@@ -231,25 +232,20 @@ export const FeaturesSection: React.FC = () => {
             {/* SEO FAQ Section - वैसा ही है */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center space-y-4 mb-16">
-                    <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest italic flex items-center justify-center gap-2">
-                        Common Questions
+                    <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest italic flex items-center justify-center gap-2 dark:text-blue-400">
+                        {t.features.commonQuestions}
                     </h2>
-                    <h3 className="text-3xl font-black text-slate-800 tracking-tight leading-tight">Frequently Asked Questions</h3>
+                    <h3 className="text-3xl font-black text-slate-800 tracking-tight leading-tight dark:text-white">{t.features.faqTitle}</h3>
                 </div>
 
                 <div className="space-y-6">
-                    {[
-                        { q: 'Is this background remover really free?', a: 'Yes! Our tool is completely free for individual use. You can upload images and download the transparent results without any subscription.' },
-                        { q: 'What image formats do you support?', a: 'We support all common image formats including JPG, PNG, and WebP. The output is provided as a high-quality transparent PNG file.' },
-                        { q: 'Is the AI background removal quality good?', a: 'Absolutely. We use professional-grade AI models trained to handle complex edges like hair, fur, and fine object details with pixel-perfect accuracy.' },
-                        { q: 'Are my images secure?', a: 'Yes. We process images locally or via secure ephemeral sessions. Your files are never stored or sold to third parties.' }
-                    ].map((faq, idx) => (
-                        <div key={idx} className="p-8 bg-slate-50 rounded-3xl border border-slate-200 hover:border-blue-200 hover:bg-white transition-all cursor-default group">
-                            <h4 className="text-lg font-black text-slate-800 mb-3 flex items-center justify-between">
+                    {(t.faq || translations.en.faq).map((faq: any, idx: number) => (
+                        <div key={idx} className="p-8 bg-slate-50 rounded-3xl border border-slate-200 hover:border-blue-200 hover:bg-white transition-all cursor-default group dark:bg-slate-900 dark:border-slate-800 dark:hover:bg-slate-800 dark:hover:border-slate-700">
+                            <h4 className="text-lg font-black text-slate-800 mb-3 flex items-center justify-between dark:text-white">
                                 {faq.q}
-                                <MousePointer2 className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors" aria-label="FAQ item" />
+                                <MousePointer2 className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors dark:text-slate-600" aria-label="FAQ item" />
                             </h4>
-                            <p className="text-slate-500 text-sm leading-relaxed font-medium">{faq.a}</p>
+                            <p className="text-slate-500 text-sm leading-relaxed font-medium dark:text-slate-400">{faq.a}</p>
                         </div>
                     ))}
                 </div>

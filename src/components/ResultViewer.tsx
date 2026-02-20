@@ -1,7 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronRight, Sparkles, Image as ImageIcon, Eraser, Trash2, Wand2, Sliders, Undo2, Redo2, Loader2, Palette, Maximize, ZoomIn, Download, Scissors, Layers as LayersIcon } from 'lucide-react';
+import { ChevronRight, Sparkles, Image as ImageIcon, Eraser, Trash2, Wand2, Sliders, Undo2, Redo2, Loader2, Palette, Maximize, ZoomIn, Download, Scissors, Layers as LayersIcon, Archive } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import JSZip from 'jszip';
 import { cn } from '../lib/utils';
+import { useLanguage } from '../contexts/LanguageContext';
+import { translations } from '../lib/translations';
+
+interface ZoomPosition {
+    x: number;
+    y: number;
+    clientX: number;
+    clientY: number;
+}
 
 interface ProcessingTask {
     id: string;
@@ -16,6 +26,7 @@ interface ResultViewerProps {
     originalUrl: string;
     processedUrl: string;
     onReset: () => void;
+    onAddMore: () => void;
     taskList: ProcessingTask[];
     activeTaskId: string;
     onSelectTask: (id: string) => void;
@@ -37,14 +48,17 @@ interface EditorState {
     objectPadding: number;
 }
 
-type EditorTab = 'cutout' | 'background' | 'effects' | 'adjust' | 'resize';
+type EditorTab = 'cutout' | 'background' | 'effects' | 'adjust' | 'resize' | 'zoom';
 
 export const ResultViewer: React.FC<ResultViewerProps> = ({
-    originalUrl, processedUrl, onReset, taskList, activeTaskId, onSelectTask
+    originalUrl, processedUrl, onReset, onAddMore, taskList, activeTaskId, onSelectTask
 }) => {
-    const [activeTab, setActiveTab] = useState<EditorTab>('cutout');
+    const { language } = useLanguage();
+    const t = translations[language] || translations.en;
+
+    const [activeTab, setActiveTab] = useState<EditorTab>('zoom');
     const [bgSubTab, setBgSubTab] = useState<'photo' | 'color'>('photo');
-    const [sliderValue, setSliderValue] = useState(50);
+    const [zoomPosition, setZoomPosition] = useState<ZoomPosition>({ x: 50, y: 50, clientX: 0, clientY: 0 });
 
     // Core States
     const [bgColor, setBgColor] = useState('transparent');
@@ -69,11 +83,14 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
     const [isMagicBrush] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const [customColor, setCustomColor] = useState('#6366f1');
+    const [applyToAll, setApplyToAll] = useState(false);
+    const [taskConfigs, setTaskConfigs] = useState<Record<string, Omit<EditorState, 'mask'>>>({});
 
     // Canvas Refs
     const displayCanvasRef = useRef<HTMLCanvasElement>(null);
     const maskCanvasRef = useRef<HTMLCanvasElement>(null);
     const selectionCanvasRef = useRef<HTMLCanvasElement>(null);
+    const loupeCanvasRef = useRef<HTMLCanvasElement>(null);
     const cursorRef = useRef<HTMLDivElement>(null);
     const colorPickerRef = useRef<HTMLInputElement>(null);
     const originalImageRef = useRef<HTMLImageElement | null>(null);
@@ -136,7 +153,18 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                 selectionCanvas.height = proc.height;
                 const mCtx = maskCanvas.getContext('2d', { willReadFrequently: true })!;
                 mCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
-                mCtx.drawImage(proc, 0, 0);
+
+                const savedConfig = taskConfigs[activeTaskId];
+                if (savedConfig && (savedConfig as any).mask) {
+                    const savedMask = new Image();
+                    savedMask.onload = () => {
+                        mCtx.drawImage(savedMask, 0, 0);
+                        renderDisplay();
+                    };
+                    savedMask.src = (savedConfig as any).mask;
+                } else {
+                    mCtx.drawImage(proc, 0, 0);
+                }
 
                 // Initial History State
                 const initialState: EditorState = {
@@ -156,13 +184,15 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                 };
                 setHistory([initialState]);
                 setHistoryIndex(0);
+                // Auto-redirect to Zoom tab
+                setActiveTab('zoom');
             }
 
             renderDisplay();
         };
 
         loadImages();
-    }, [processedUrl, originalUrl]);
+    }, [processedUrl, originalUrl, activeTaskId]);
 
     // Main Render Function
     const renderDisplay = useCallback(() => {
@@ -252,6 +282,78 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
         setHistoryIndex(prev => Math.min(prev + 1, 49));
     }, [bgColor, bgImage, isBlurEnabled, bgBlur, isShadowEnabled, shadowOpacity, shadowIntensity, isReflectionEnabled, brightness, contrast, aspectRatio, objectPadding, historyIndex]);
 
+    // Update all tasks or single task
+    const updateConfig = useCallback((updates: Partial<Omit<EditorState, 'mask'>>) => {
+        if (applyToAll) {
+            const nextConfigs = { ...taskConfigs };
+            taskList.forEach(task => {
+                nextConfigs[task.id] = {
+                    ...(nextConfigs[task.id] || {
+                        bgColor: 'transparent', bgImage: null, isBlurEnabled: false, bgBlur: 8,
+                        isShadowEnabled: false, shadowOpacity: 40, shadowIntensity: 6,
+                        isReflectionEnabled: false, brightness: 100, contrast: 100,
+                        aspectRatio: 'aspect-[4/3]', objectPadding: 0
+                    }),
+                    ...updates
+                };
+            });
+            setTaskConfigs(nextConfigs);
+        } else {
+            setTaskConfigs(prev => ({
+                ...prev,
+                [activeTaskId]: {
+                    ...(prev[activeTaskId] || {
+                        bgColor: 'transparent', bgImage: null, isBlurEnabled: false, bgBlur: 8,
+                        isShadowEnabled: false, shadowOpacity: 40, shadowIntensity: 6,
+                        isReflectionEnabled: false, brightness: 100, contrast: 100,
+                        aspectRatio: 'aspect-[4/3]', objectPadding: 0
+                    }),
+                    ...updates
+                }
+            }));
+        }
+    }, [applyToAll, taskConfigs, activeTaskId, taskList]);
+
+    // Sync local states to config
+    useEffect(() => {
+        // Save current mask to previous task before switching
+        return () => {
+            const mCanvas = maskCanvasRef.current;
+            if (mCanvas && activeTaskId) {
+                setTaskConfigs(prev => ({
+                    ...prev,
+                    [activeTaskId]: {
+                        ...(prev[activeTaskId] || {
+                            bgColor: 'transparent', bgImage: null, isBlurEnabled: false, bgBlur: 8,
+                            isShadowEnabled: false, shadowOpacity: 40, shadowIntensity: 6,
+                            isReflectionEnabled: false, brightness: 100, contrast: 100,
+                            aspectRatio: 'aspect-[4/3]', objectPadding: 0
+                        }),
+                        mask: mCanvas.toDataURL()
+                    } as any
+                }));
+            }
+        };
+    }, [activeTaskId]); // Removed taskConfigs dependency to avoid infinite loop
+
+    useEffect(() => {
+        const config = taskConfigs[activeTaskId];
+        if (config) {
+            setBgColor(config.bgColor);
+            setBgImage(config.bgImage);
+            setIsBlurEnabled(config.isBlurEnabled);
+            setBgBlur(config.bgBlur);
+            setIsShadowEnabled(config.isShadowEnabled);
+            setShadowOpacity(config.shadowOpacity);
+            setShadowIntensity(config.shadowIntensity);
+            setIsReflectionEnabled(config.isReflectionEnabled);
+            setBrightness(config.brightness);
+            setContrast(config.contrast);
+            setAspectRatio(config.aspectRatio);
+            setObjectPadding(config.objectPadding);
+        }
+    }, [activeTaskId]);
+
     // Apply specific history state
     const applyHistoryState = useCallback((state: EditorState) => {
         isUndoingRedoingRef.current = true;
@@ -329,7 +431,7 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
         if (!detectedBgColor || !originalImageRef.current || !maskCanvasRef.current) return;
 
         setIsProcessing(true);
-        await new Promise(r => setTimeout(r, 800));
+        // Removed artificial delay for faster processing
 
         const mCanvas = maskCanvasRef.current;
         const orig = originalImageRef.current;
@@ -440,6 +542,52 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
         } else {
             clientX = e.clientX;
             clientY = e.clientY;
+        }
+
+        // Magnifier Loupe Logic (Available ONLY in zoom tab)
+        if (!isProcessing && activeTab === 'zoom') {
+            const rect = dCanvas.getBoundingClientRect();
+            const x = ((clientX - rect.left) / rect.width) * 100;
+            const y = ((clientY - rect.top) / rect.height) * 100;
+            setZoomPosition({ x, y, clientX, clientY });
+
+            // Update Live Loupe Canvas from displayCanvas
+            const lCanvas = loupeCanvasRef.current;
+            if (lCanvas && dCanvas) {
+                const lCtx = lCanvas.getContext('2d');
+                if (lCtx) {
+                    const zoomLevel = 2.5;
+                    const baseSize = 192; // 48 * 4
+                    const dpr = window.devicePixelRatio || 1;
+
+                    // High-DPI Scaling for ultimate sharpness
+                    lCanvas.width = baseSize * dpr;
+                    lCanvas.height = baseSize * dpr;
+
+                    const sourceX = (x / 100) * dCanvas.width;
+                    const sourceY = (y / 100) * dCanvas.height;
+                    const sourceSize = (baseSize / zoomLevel);
+
+                    lCtx.imageSmoothingEnabled = true;
+                    lCtx.imageSmoothingQuality = 'high';
+                    lCtx.clearRect(0, 0, lCanvas.width, lCanvas.height);
+
+                    lCtx.save();
+                    lCtx.scale(dpr, dpr);
+                    lCtx.drawImage(
+                        dCanvas,
+                        sourceX - (sourceSize / 2),
+                        sourceY - (sourceSize / 2),
+                        sourceSize,
+                        sourceSize,
+                        0,
+                        0,
+                        baseSize,
+                        baseSize
+                    );
+                    lCtx.restore();
+                }
+            }
         }
 
         if (cursorRef.current && activeTab === 'cutout') {
@@ -597,19 +745,45 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
         link.click();
     };
 
+    const handleDownloadAll = async () => {
+        const zip = new JSZip();
+        const completedTasks = taskList.filter(t => t.status === 'completed' && t.processedUrl);
+
+        if (completedTasks.length === 0) return;
+
+        // Add a small indicator that we are zipping
+        setIsProcessing(true);
+
+        const promises = completedTasks.map(async (task, index) => {
+            const response = await fetch(task.processedUrl!);
+            const blob = await response.blob();
+            zip.file(`ai-remover-pro-${index + 1}.png`, blob);
+        });
+
+        await Promise.all(promises);
+        const content = await zip.generateAsync({ type: "blob" });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = `ai-remover-batch-${Date.now()}.zip`;
+        link.click();
+
+        setIsProcessing(false);
+    };
+
     const toolbarItems = [
-        { id: 'cutout', label: 'Cutout', icon: <Eraser className="w-4 h-4" /> },
-        { id: 'background', label: 'Background', icon: <ImageIcon className="w-4 h-4" /> },
-        { id: 'effects', label: 'Effects', icon: <Sparkles className="w-4 h-4" /> },
-        { id: 'adjust', label: 'Adjust', icon: <Sliders className="w-4 h-4" /> },
-        { id: 'resize', label: 'Resize', icon: <Maximize className="w-4 h-4" /> },
+        { id: 'zoom', label: t.common.zoom, icon: <ZoomIn className="w-4 h-4" /> },
+        { id: 'cutout', label: t.common.cutout, icon: <Eraser className="w-4 h-4" /> },
+        { id: 'background', label: t.common.background, icon: <ImageIcon className="w-4 h-4" /> },
+        { id: 'effects', label: t.common.effects, icon: <Sparkles className="w-4 h-4" /> },
+        { id: 'adjust', label: t.common.adjust, icon: <Sliders className="w-4 h-4" /> },
+        { id: 'resize', label: t.common.resize, icon: <Maximize className="w-4 h-4" /> },
     ];
 
     const socialRatios = [
-        { label: 'Original', value: 'aspect-[4/3]' },
-        { label: 'Square (1:1)', value: 'aspect-square' },
-        { label: 'Story (9:16)', value: 'aspect-[9/16]' },
-        { label: 'YouTube (16:9)', value: 'aspect-video' },
+        { label: t.editor.original, value: 'aspect-[4/3]' },
+        { label: t.editor.square, value: 'aspect-square' },
+        { label: t.editor.story, value: 'aspect-[9/16]' },
+        { label: t.editor.video, value: 'aspect-video' },
     ];
 
     const photoPresets = [
@@ -649,32 +823,32 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
     ];
 
     return (
-        <div className="fixed inset-0 z-[60] h-[100dvh] flex flex-col bg-white sm:bg-slate-50 overflow-hidden font-sans">
+        <div className="fixed inset-0 z-[60] h-[100dvh] flex flex-col bg-white sm:bg-slate-50 overflow-hidden font-sans dark:bg-slate-900">
             {/* Mobile Top Bar */}
-            <div className="lg:hidden flex-none flex items-center justify-between px-6 py-3 bg-white">
-                <button className="p-2 text-slate-800">
+            <div className="lg:hidden flex-none flex items-center justify-between px-6 py-3 bg-white dark:bg-slate-900 border-b dark:border-slate-800">
+                <button className="p-2 text-slate-800 dark:text-white">
                     <LayersIcon className="w-5 h-5" />
                 </button>
                 <div className="flex items-center gap-6">
-                    <button className="p-2 text-slate-400">
+                    <button className="p-2 text-slate-400 dark:text-slate-500">
                         <ZoomIn className="w-5 h-5" />
                     </button>
-                    <button onClick={undo} className="p-2 text-slate-400">
+                    <button onClick={undo} className="p-2 text-slate-400 dark:text-slate-500">
                         <Undo2 className="w-5 h-5" />
                     </button>
-                    <button onClick={redo} className="p-2 text-slate-400">
+                    <button onClick={redo} className="p-2 text-slate-400 dark:text-slate-500">
                         <Redo2 className="w-5 h-5" />
                     </button>
                 </div>
             </div>
 
             {/* Mobile Task Strip (Top) */}
-            <div className="lg:hidden flex-none flex items-center gap-3 px-4 py-2 overflow-x-auto no-scrollbar bg-white shadow-sm">
+            <div className="lg:hidden flex-none flex items-center gap-3 px-4 py-2 overflow-x-auto no-scrollbar bg-white shadow-sm border-b border-slate-50 dark:bg-slate-900 dark:border-slate-800">
                 <button
-                    onClick={onReset}
-                    className="w-14 h-14 flex-shrink-0 bg-slate-50 rounded-xl flex items-center justify-center border-2 border-slate-100 text-slate-400"
+                    onClick={onAddMore}
+                    className="w-14 h-14 flex-shrink-0 bg-blue-50 rounded-xl flex items-center justify-center border-2 border-blue-100 text-blue-600 active:scale-90 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-blue-400"
                 >
-                    <div className="text-xl font-light">+</div>
+                    <div className="text-xl font-black">+</div>
                 </button>
                 {taskList.map((task) => (
                     <button
@@ -682,14 +856,18 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                         onClick={() => onSelectTask(task.id)}
                         className={cn(
                             "relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0",
-                            activeTaskId === task.id ? "border-blue-600" : "border-slate-100 opacity-60"
+                            activeTaskId === task.id ? "border-blue-600 scale-105 z-10" : "border-slate-100 opacity-60"
                         )}
+                        disabled={task.status === 'processing' || task.status === 'pending'}
                     >
                         <img src={task.processedUrl || task.originalUrl} className="w-full h-full object-cover" alt="Task" />
-                        {activeTaskId === task.id && (
-                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                <Trash2 className="w-4 h-4 text-white bg-black/40 p-1 rounded-lg" />
+                        {task.status === 'processing' && (
+                            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
+                                <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
                             </div>
+                        )}
+                        {activeTaskId === task.id && task.status === 'completed' && (
+                            <div className="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full shadow-lg" />
                         )}
                     </button>
                 ))}
@@ -699,7 +877,7 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                 <div className="hidden sm:flex items-center gap-4">
                     {/* Top Toolbar - Heightened Z-Index to prevent clipping */}
                     <div className="flex items-center justify-center w-full relative z-[60]">
-                        <div className="bg-white/90 backdrop-blur-xl border border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-full px-2 py-1.5 flex items-center gap-1 lg:gap-3">
+                        <div className="bg-white/90 backdrop-blur-xl border border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-full px-2 py-1.5 flex items-center gap-1 lg:gap-3 dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-none">
                             {toolbarItems.map((item) => (
                                 <button
                                     key={item.id}
@@ -707,8 +885,8 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                     className={cn(
                                         "flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 text-xs font-black uppercase tracking-tight",
                                         activeTab === item.id
-                                            ? "bg-blue-600 text-white shadow-lg shadow-blue-100 scale-105"
-                                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                                            ? "bg-blue-600 text-white shadow-lg shadow-blue-100 scale-105 dark:shadow-none"
+                                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
                                     )}
                                 >
                                     {item.icon}
@@ -716,13 +894,13 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                 </button>
                             ))}
 
-                            <div className="w-[1px] h-6 bg-slate-100 mx-2 hidden sm:block" />
+                            <div className="w-[1px] h-6 bg-slate-100 mx-2 hidden sm:block dark:bg-slate-800" />
 
                             <div className="flex items-center gap-1 sm:gap-2 mr-2">
-                                <button onClick={undo} disabled={historyIndex <= 0} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-all disabled:opacity-20">
+                                <button onClick={undo} disabled={historyIndex <= 0} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-all disabled:opacity-20 dark:hover:bg-slate-800 dark:hover:text-white">
                                     <Undo2 className="w-4 h-4" />
                                 </button>
-                                <button onClick={redo} disabled={historyIndex >= history.length - 1} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-all disabled:opacity-20">
+                                <button onClick={redo} disabled={historyIndex >= history.length - 1} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-all disabled:opacity-20 dark:hover:bg-slate-800 dark:hover:text-white">
                                     <Redo2 className="w-4 h-4" />
                                 </button>
                             </div>
@@ -730,18 +908,18 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                             <div className="relative">
                                 <button
                                     onClick={() => setIsDownloadMenuOpen(!isDownloadMenuOpen)}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-100 flex items-center gap-2 transition-all active:scale-95"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-100 flex items-center gap-2 transition-all active:scale-95 dark:shadow-none"
                                 >
-                                    Download <ChevronRight className={cn("w-3 h-3 transition-transform", isDownloadMenuOpen && "rotate-90")} />
+                                    {t.download} <ChevronRight className={cn("w-3 h-3 transition-transform", isDownloadMenuOpen && "rotate-90")} />
                                 </button>
 
                                 {isDownloadMenuOpen && (
-                                    <div className="absolute top-full right-0 mt-4 bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-200 overflow-hidden z-[100] min-w-[240px] animate-in fade-in slide-in-from-top-4 duration-300">
-                                        <div className="p-4 border-b border-slate-100 bg-slate-50/80 backdrop-blur-sm">
-                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Select Download Quality</p>
+                                    <div className="absolute top-full right-0 mt-4 bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-200 overflow-hidden z-[100] min-w-[240px] animate-in fade-in slide-in-from-top-4 duration-300 dark:bg-slate-900 dark:border-slate-800 dark:shadow-black/50">
+                                        <div className="p-4 border-b border-slate-100 bg-slate-50/80 backdrop-blur-sm dark:bg-slate-800/80 dark:border-slate-800">
+                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.editor.downloadMenuTitle}</p>
                                         </div>
-                                        <div className="p-2 bg-white">
-                                            {[{ id: 'high', label: 'High Definition', sub: 'Best for printing', scale: 1 }, { id: 'medium', label: 'Regular Quality', sub: 'Standard web use', scale: 0.7 }, { id: 'low', scale: 0.4, label: 'Small File', sub: 'Social sharing' }].map((opt) => (
+                                        <div className="p-2 bg-white dark:bg-slate-900">
+                                            {[{ id: 'high', label: t.editor.qualityHigh, sub: t.editor.qualityHighSub, scale: 1 }, { id: 'medium', label: t.editor.qualityMedium, sub: t.editor.qualityMediumSub, scale: 0.7 }, { id: 'low', scale: 0.4, label: t.editor.qualityLow, sub: t.editor.qualityLowSub }].map((opt) => (
                                                 <button
                                                     key={opt.id}
                                                     onClick={() => {
@@ -751,8 +929,8 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                                     className="w-full text-left p-4 hover:bg-blue-600 group rounded-2xl transition-all duration-200 mb-1 last:mb-0"
                                                 >
                                                     <div className="flex justify-between items-center mb-1">
-                                                        <p className="text-[13px] font-black text-slate-800 group-hover:text-white transition-colors">{opt.label}</p>
-                                                        <p className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg group-hover:bg-white/20 group-hover:text-white transition-all">
+                                                        <p className="text-[13px] font-black text-slate-800 group-hover:text-white transition-colors dark:text-white">{opt.label}</p>
+                                                        <p className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg group-hover:bg-white/20 group-hover:text-white transition-all dark:bg-blue-900/30 dark:text-blue-400">
                                                             {estimatedSizes[opt.id] || '...'}
                                                         </p>
                                                     </div>
@@ -772,23 +950,97 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
 
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 flex-grow flex-shrink min-h-0 overflow-hidden px-0 sm:px-4">
                 {/* Desktop Task Strip (Sidebar) */}
-                <div className="hidden lg:flex w-48 flex-shrink-0 flex-col gap-2 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="hidden lg:flex w-56 flex-shrink-0 flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar no-scrollbar py-2">
+                    <div className="space-y-2 mb-2">
+                        <button
+                            onClick={handleDownloadAll}
+                            disabled={taskList.every(t => t.status !== 'completed')}
+                            className="w-full py-3.5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all disabled:opacity-30 active:scale-95"
+                        >
+                            <Archive className="w-4 h-4" /> {t.common.downloadAll}
+                        </button>
+                        <button
+                            onClick={onReset}
+                            className="w-full py-3 bg-white text-slate-400 rounded-2xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-slate-100 hover:bg-slate-50 transition-all active:scale-95"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" /> {t.common.clearAll}
+                        </button>
+
+                        <div className="pt-2 px-1">
+                            <div className="flex p-1 bg-slate-100/80 rounded-2xl w-full border border-slate-100/50">
+                                <button
+                                    onClick={() => setApplyToAll(false)}
+                                    className={cn(
+                                        "flex-grow py-2 rounded-xl text-[8px] font-black uppercase tracking-wider transition-all",
+                                        !applyToAll ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-500"
+                                    )}
+                                >
+                                    {t.common.singleEdit}
+                                </button>
+                                <button
+                                    onClick={() => setApplyToAll(true)}
+                                    className={cn(
+                                        "flex-grow py-2 rounded-xl text-[8px] font-black uppercase tracking-wider transition-all",
+                                        applyToAll ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-500"
+                                    )}
+                                >
+                                    {t.common.applyToAll}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="w-full h-[1px] bg-slate-100 mb-2" />
+
                     {taskList.map((task) => (
                         <button
                             key={task.id}
                             onClick={() => onSelectTask(task.id)}
+                            disabled={task.status === 'processing' || task.status === 'pending'}
                             className={cn(
-                                "relative w-full h-32 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 group",
-                                activeTaskId === task.id ? "border-blue-600 shadow-lg scale-102" : "border-slate-100 opacity-60 hover:opacity-100"
+                                "relative w-full h-36 rounded-[2rem] overflow-hidden border-2 transition-all flex-shrink-0 group",
+                                activeTaskId === task.id ? "border-blue-600 shadow-2xl scale-[1.03] z-10" : "border-slate-50 opacity-50 hover:opacity-100 hover:border-slate-200"
                             )}
                         >
-                            <img src={task.processedUrl || task.originalUrl} className="w-full h-full object-cover" alt="Task" />
+                            <img src={task.processedUrl || task.originalUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="Task" />
+
+                            {task.status === 'processing' && (
+                                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+                                    <Loader2 className="w-6 h-6 text-blue-600 animate-spin mb-2" />
+                                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${task.progress}%` }}
+                                            className="h-full bg-blue-600"
+                                        />
+                                    </div>
+                                    <span className="text-[8px] font-black text-blue-600 mt-1 uppercase tracking-widest">{task.progress}%</span>
+                                </div>
+                            )}
+
+                            {task.status === 'completed' && (
+                                <div className="absolute top-3 right-3 w-3 h-3 bg-blue-600 rounded-full shadow-lg border-2 border-white" />
+                            )}
+
+                            <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-2">
+                                <span className="text-[8px] font-black text-white uppercase tracking-widest">Select to Edit</span>
+                            </div>
                         </button>
                     ))}
+
+                    <button
+                        onClick={onAddMore}
+                        className="w-full h-32 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all flex-shrink-0 group mt-2"
+                    >
+                        <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                            <span className="text-2xl font-light group-hover:font-bold">+</span>
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-widest">Add More</span>
+                    </button>
                 </div>
 
                 <div className="flex-grow flex-shrink min-h-0 flex flex-col gap-4 min-w-0 lg:min-h-[400px]">
-                    <div className="flex-grow flex-shrink min-h-0 relative flex items-center justify-center bg-slate-100/50 sm:rounded-[3rem] border-y sm:border border-slate-100 shadow-inner overflow-hidden group/editor p-2 sm:p-4">
+                    <div className="flex-grow flex-shrink min-h-0 relative flex items-center justify-center bg-slate-100/50 sm:rounded-[3rem] border-y sm:border border-slate-100 shadow-inner overflow-hidden group/editor p-2 sm:p-4 dark:bg-slate-800/50 dark:border-slate-800">
                         <div
                             className={cn(
                                 "relative overflow-hidden shadow-2xl flex items-center justify-center transition-all duration-300 rounded-[2.5rem]",
@@ -797,9 +1049,14 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                         aspectRatio === 'aspect-[9/16]' ? "h-[90%] aspect-[9/16]" :
                                             "w-[90%] aspect-video"
                             )}
+                            style={{
+                                transform: 'none',
+                                transformOrigin: 'center center',
+                                transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                            }}
                         >
                             <div
-                                className="absolute inset-0 transition-all duration-500"
+                                className="absolute inset-0"
                                 style={{
                                     background: bgImage
                                         ? `url(${bgImage}) center/cover no-repeat`
@@ -813,9 +1070,9 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                 <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
                                     style={{
                                         backgroundImage: `
-                                            linear-gradient(45deg, #000 25%, transparent 25%), 
-                                            linear-gradient(-45deg, #000 25%, transparent 25%), 
-                                            linear-gradient(45deg, transparent 75%, #000 75%), 
+                                            linear-gradient(45deg, #000 25%, transparent 25%),
+                                            linear-gradient(-45deg, #000 25%, transparent 25%),
+                                            linear-gradient(45deg, transparent 75%, #000 75%),
                                             linear-gradient(-45deg, transparent 75%, #000 75%)
                                          `,
                                         backgroundSize: '24px 24px',
@@ -831,7 +1088,7 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                     onMouseMove={draw}
                                     onMouseUp={stopDrawing}
                                     onMouseLeave={() => { stopDrawing(); setIsHovering(false); }}
-                                    onMouseEnter={() => setIsHovering(true)}
+                                    onMouseEnter={() => { setIsHovering(true); }}
                                     onTouchStart={startDrawing}
                                     onTouchMove={draw}
                                     onTouchEnd={stopDrawing}
@@ -870,18 +1127,37 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                             <canvas ref={maskCanvasRef} className="hidden" />
                             <canvas ref={selectionCanvasRef} className="hidden" />
 
+                            {/* Magnifier Loupe - Zoom Tab Only */}
+                            {isHovering && displayCanvasRef.current && activeTab === 'zoom' && (
+                                <div
+                                    className="fixed pointer-events-none z-[100] w-48 h-48 border-4 border-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden bg-slate-900"
+                                    style={{
+                                        left: 0,
+                                        top: 0,
+                                        transform: `translate3d(${zoomPosition.clientX - 96}px, ${zoomPosition.clientY - 96}px, 0)`,
+                                        backgroundImage: `
+                                            linear-gradient(45deg, #ccc 25%, transparent 25%),
+                                            linear-gradient(-45deg, #ccc 25%, transparent 25%),
+                                            linear-gradient(45deg, transparent 75%, #ccc 75%),
+                                            linear-gradient(-45deg, transparent 75%, #ccc 75%)
+                                        `,
+                                        backgroundRepeat: 'repeat',
+                                        backgroundSize: `${24 * 4}px ${24 * 4}px`,
+                                        backgroundPosition: `0 0, 0 ${12 * 4}px, ${12 * 4}px -${12 * 4}px, -${12 * 4}px 0px`,
+                                        backgroundColor: 'white'
+                                    }}
+                                >
+                                    <canvas
+                                        ref={loupeCanvasRef}
+                                        className="w-full h-full object-contain relative z-10"
+                                    />
+                                </div>
+                            )}
+
                             {activeTab !== 'cutout' && (
-                                <>
-                                    <div className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_20px_rgba(0,0,0,0.2)] z-40 pointer-events-none" style={{ left: `${sliderValue}%` }}>
-                                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full shadow-xl flex items-center justify-center border-2 border-blue-600 opacity-0 group-hover/editor:opacity-100 transition-opacity">
-                                            <ChevronRight className="w-4 h-4 text-blue-600" />
-                                        </div>
-                                        <input type="range" min="0" max="100" value={sliderValue} onChange={(e) => setSliderValue(parseInt(e.target.value))} className="absolute inset-x-[-20px] top-0 bottom-0 opacity-0 cursor-col-resize z-50 pointer-events-auto" />
-                                    </div>
-                                    <div className="absolute inset-x-0 bottom-4 text-center lg:hidden">
-                                        <p className="text-[9px] text-slate-500/40 leading-tight">Canva integration available in Background tab</p>
-                                    </div>
-                                </>
+                                <div className="absolute inset-x-0 bottom-4 text-center lg:hidden pointer-events-none">
+                                    <p className="text-[9px] text-slate-500/60 leading-tight font-bold uppercase tracking-widest">{t.editor.hoverZoomNote || 'Hover to Zoom'}</p>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -890,6 +1166,30 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                 <div className="lg:hidden flex-none bg-white border-t border-slate-100 px-2 pb-safe z-50">
                     <div className="w-full h-1 flex justify-center py-2">
                         <div className="w-8 h-1 bg-slate-200 rounded-full" />
+                    </div>
+
+                    {/* Mobile Batch Toggle */}
+                    <div className="px-4 py-1">
+                        <div className="flex p-1 bg-slate-100/50 rounded-xl w-full border border-slate-100/30">
+                            <button
+                                onClick={() => setApplyToAll(false)}
+                                className={cn(
+                                    "flex-grow py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all",
+                                    !applyToAll ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"
+                                )}
+                            >
+                                {t.common.singleEdit}
+                            </button>
+                            <button
+                                onClick={() => setApplyToAll(true)}
+                                className={cn(
+                                    "flex-grow py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all",
+                                    applyToAll ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"
+                                )}
+                            >
+                                {t.common.applyToAll}
+                            </button>
+                        </div>
                     </div>
                     {/* Active Tool Panel (Slide-up context) */}
                     <div className="relative overflow-hidden bg-white h-[140px]">
@@ -915,12 +1215,12 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                 {activeTab === 'adjust' && (
                                     <div className="flex flex-col justify-center gap-4 px-6 w-full h-full">
                                         <div className="flex items-center gap-4">
-                                            <span className="w-16 text-[10px] font-black text-slate-400 uppercase tracking-tighter">Bright</span>
-                                            <input type="range" value={brightness} min="50" max="150" onChange={(e) => setBrightness(parseInt(e.target.value))} className="flex-grow h-2 accent-blue-600" />
+                                            <span className="w-16 text-[10px] font-black text-slate-400 uppercase tracking-tighter">{t.editor.brightness}</span>
+                                            <input type="range" value={brightness} min="50" max="150" onChange={(e) => { const val = parseInt(e.target.value); setBrightness(val); updateConfig({ brightness: val }); }} className="flex-grow h-2 accent-blue-600" />
                                         </div>
                                         <div className="flex items-center gap-4">
-                                            <span className="w-16 text-[10px] font-black text-slate-400 uppercase tracking-tighter">Contrast</span>
-                                            <input type="range" value={contrast} min="50" max="150" onChange={(e) => setContrast(parseInt(e.target.value))} className="flex-grow h-2 accent-blue-600" />
+                                            <span className="w-16 text-[10px] font-black text-slate-400 uppercase tracking-tighter">{t.editor.contrast}</span>
+                                            <input type="range" value={contrast} min="50" max="150" onChange={(e) => { const val = parseInt(e.target.value); setContrast(val); updateConfig({ contrast: val }); }} className="flex-grow h-2 accent-blue-600" />
                                         </div>
                                     </div>
                                 )}
@@ -930,7 +1230,7 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                             <div className="flex-grow flex gap-1 p-0.5 bg-slate-100 rounded-lg">
                                                 {['photo', 'color'].map((tab) => (
                                                     <button key={tab} onClick={() => setBgSubTab(tab as any)} className={cn("flex-grow py-1.5 rounded-md text-[10px] font-black uppercase transition-all", bgSubTab === tab ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>
-                                                        {tab}
+                                                        {tab === 'photo' ? t.editor.photoTab : t.editor.colorTab}
                                                     </button>
                                                 ))}
                                             </div>
@@ -946,7 +1246,7 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                             {bgSubTab === 'photo' ? (
                                                 <div className="grid grid-cols-4 gap-2 pb-1">
                                                     <button onClick={() => setBgImage(null)} className={cn("aspect-square rounded-lg border-2 flex items-center justify-center bg-slate-50", !bgImage ? "border-blue-600 shadow-sm" : "border-slate-100")}>
-                                                        <div className="text-[8px] font-black text-slate-400 uppercase">None</div>
+                                                        <div className="text-[8px] font-black text-slate-400 uppercase">{t.editor.noneOption}</div>
                                                     </button>
                                                     {photoPresets.map((url, i) => (
                                                         <button key={i} onClick={() => setBgImage(url)} className={cn("aspect-square rounded-lg border-2 overflow-hidden transition-all", bgImage === url ? "border-blue-600 shadow-md scale-95" : "border-slate-100")}>
@@ -979,22 +1279,30 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                 {activeTab === 'effects' && (
                                     <div className="flex flex-col justify-center gap-4 px-6 w-full h-full">
                                         <div className="flex items-center gap-4">
-                                            <button onClick={() => setIsBlurEnabled(!isBlurEnabled)} className={cn("flex-shrink-0 p-2 rounded-xl border-2 transition-all", isBlurEnabled ? "bg-blue-50 border-blue-200 text-blue-600 shadow-sm" : "bg-slate-50 border-slate-100 text-slate-400")}>
+                                            <button onClick={() => { setIsBlurEnabled(!isBlurEnabled); updateConfig({ isBlurEnabled: !isBlurEnabled }); }} className={cn("flex-shrink-0 p-2 rounded-xl border-2 transition-all", isBlurEnabled ? "bg-blue-50 border-blue-200 text-blue-600 shadow-sm" : "bg-slate-50 border-slate-100 text-slate-400")}>
                                                 <Sparkles className="w-5 h-5" />
                                             </button>
-                                            <input type="range" value={bgBlur} min="0" max="40" onChange={(e) => setBgBlur(parseInt(e.target.value))} disabled={!isBlurEnabled} className="flex-grow h-2 accent-blue-600" />
+                                            <input type="range" value={bgBlur} min="0" max="40" onChange={(e) => { const val = parseInt(e.target.value); setBgBlur(val); updateConfig({ bgBlur: val }); }} disabled={!isBlurEnabled} className="flex-grow h-2 accent-blue-600" />
                                         </div>
                                         <div className="flex items-center gap-4">
-                                            <button onClick={() => setIsShadowEnabled(!isShadowEnabled)} className={cn("flex-shrink-0 p-2 rounded-xl border-2 transition-all", isShadowEnabled ? "bg-blue-50 border-blue-200 text-blue-600 shadow-sm" : "bg-slate-50 border-slate-100 text-slate-400")}>
+                                            <button onClick={() => { setIsShadowEnabled(!isShadowEnabled); updateConfig({ isShadowEnabled: !isShadowEnabled }); }} className={cn("flex-shrink-0 p-2 rounded-xl border-2 transition-all", isShadowEnabled ? "bg-blue-50 border-blue-200 text-blue-600 shadow-sm" : "bg-slate-50 border-slate-100 text-slate-400")}>
                                                 <LayersIcon className="w-5 h-5" />
                                             </button>
-                                            <input type="range" value={shadowOpacity} min="0" max="100" onChange={(e) => setShadowOpacity(parseInt(e.target.value))} disabled={!isShadowEnabled} className="flex-grow h-2 accent-blue-600" />
+                                            <input type="range" value={shadowOpacity} min="0" max="100" onChange={(e) => { const val = parseInt(e.target.value); setShadowOpacity(val); updateConfig({ shadowOpacity: val }); }} disabled={!isShadowEnabled} className="flex-grow h-2 accent-blue-600" />
                                         </div>
                                         <div className="flex justify-center">
-                                            <button onClick={() => setIsReflectionEnabled(!isReflectionEnabled)} className={cn("px-6 py-2 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest transition-all", isReflectionEnabled ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200" : "bg-slate-50 border-slate-100 text-slate-400")}>
-                                                Reflection Effect
+                                            <button onClick={() => { setIsReflectionEnabled(!isReflectionEnabled); updateConfig({ isReflectionEnabled: !isReflectionEnabled }); }} className={cn("px-6 py-2 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest transition-all", isReflectionEnabled ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200" : "bg-slate-50 border-slate-100 text-slate-400")}>
+                                                {t.editor.reflectionLabel}
                                             </button>
                                         </div>
+                                    </div>
+                                )}
+                                {activeTab === 'zoom' && (
+                                    <div className="flex flex-col justify-center items-center gap-2 w-full h-full px-4">
+                                        <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                                            <ZoomIn className="w-6 h-6" />
+                                        </div>
+                                        <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest">{t.editor.hoverZoomNote}</p>
                                     </div>
                                 )}
                             </motion.div>
@@ -1004,28 +1312,31 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                     {/* Main Navigation Tabs */}
                     <div className="flex justify-around items-center h-20 bg-white">
                         <button onClick={() => setActiveTab('background')} className={cn("flex flex-col items-center gap-1.5 transition-all active:scale-95", activeTab === 'background' ? "text-blue-600" : "text-slate-400")}>
-                            <ImageIcon className="w-6 h-6" /><span className="text-[10px] font-bold">Background</span>
+                            <ImageIcon className="w-6 h-6" /><span className="text-[10px] font-bold">{t.common.background}</span>
                         </button>
                         <button onClick={() => setActiveTab('cutout')} className={cn("flex flex-col items-center gap-1.5 transition-all active:scale-95", activeTab === 'cutout' ? "text-blue-600" : "text-slate-400")}>
-                            <Scissors className="w-6 h-6" /><span className="text-[10px] font-bold">Cutout</span>
+                            <Scissors className="w-6 h-6" /><span className="text-[10px] font-bold">{t.common.cutout}</span>
                         </button>
                         <button onClick={() => handleDownload()} className="flex flex-col items-center gap-1.5 -translate-y-2">
                             <div className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-xl shadow-blue-200 active:scale-90 transition-all">
                                 <Download className="w-6 h-6" />
                             </div>
-                            <span className="text-[10px] font-bold text-blue-600">Download</span>
+                            <span className="text-[10px] font-bold text-blue-600">{t.common.download}</span>
                         </button>
                         <button onClick={() => setActiveTab('adjust')} className={cn("flex flex-col items-center gap-1.5 transition-all active:scale-95", activeTab === 'adjust' ? "text-blue-600" : "text-slate-400")}>
-                            <Sliders className="w-6 h-6" /><span className="text-[10px] font-bold">Adjust</span>
+                            <Sliders className="w-6 h-6" /><span className="text-[10px] font-bold">{t.common.adjust}</span>
                         </button>
                         <button onClick={() => setActiveTab('effects')} className={cn("flex flex-col items-center gap-1.5 transition-all active:scale-95", activeTab === 'effects' ? "text-blue-600" : "text-slate-400")}>
-                            <Wand2 className="w-6 h-6" /><span className="text-[10px] font-bold">Effects</span>
+                            <Wand2 className="w-6 h-6" /><span className="text-[10px] font-bold">{t.common.effects}</span>
+                        </button>
+                        <button onClick={() => setActiveTab('zoom')} className={cn("flex flex-col items-center gap-1.5 transition-all active:scale-95", activeTab === 'zoom' ? "text-blue-600" : "text-slate-400")}>
+                            <ZoomIn className="w-6 h-6" /><span className="text-[10px] font-bold">{t.common.zoom}</span>
                         </button>
                     </div>
                 </div>
 
                 <div className="hidden lg:flex w-full lg:w-80 flex-shrink-0 flex flex-col h-full">
-                    <div className="bg-white rounded-[1.5rem] sm:rounded-[2.5rem] shadow-2xl border border-slate-100 flex flex-col h-full overflow-hidden">
+                    <div className="bg-white rounded-[1.5rem] sm:rounded-[2.5rem] shadow-2xl border border-slate-100 flex flex-col h-full overflow-hidden dark:bg-slate-900 dark:border-slate-800 dark:shadow-black/20">
                         <div className="flex-grow p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto no-scrollbar">
 
                             {activeTab === 'cutout' && (
@@ -1034,58 +1345,58 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                         onClick={handleSmartRestoreAll}
                                         disabled={isProcessing}
                                         className={cn(
-                                            "p-6 rounded-3xl flex items-center gap-4 border transition-all w-full text-left group bg-white border-slate-100 hover:border-blue-200 active:scale-[0.98] shadow-sm disabled:opacity-50"
+                                            "p-6 rounded-3xl flex items-center gap-4 border transition-all w-full text-left group bg-white border-slate-100 hover:border-blue-200 active:scale-[0.98] shadow-sm disabled:opacity-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:border-blue-700"
                                         )}
                                     >
-                                        <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                        <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-colors dark:bg-blue-900/30 dark:text-blue-400">
                                             <Wand2 className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <p className="text-[11px] font-black uppercase tracking-tight text-slate-800">Smart Restore Mode</p>
-                                            <p className="text-[10px] font-bold leading-tight text-blue-600">
-                                                {isProcessing ? "Processing..." : "Fix object automatically"}
+                                            <p className="text-[11px] font-black uppercase tracking-tight text-slate-800 dark:text-white">{t.editor.smartRestoreTitle}</p>
+                                            <p className="text-[10px] font-bold leading-tight text-blue-600 dark:text-blue-400">
+                                                {isProcessing ? t.common.processing : t.editor.smartRestoreDesc}
                                             </p>
                                         </div>
                                     </button>
 
                                     <div className="grid grid-cols-2 gap-3 pb-2">
-                                        <button onClick={() => setEditMode('erase')} className={cn("flex flex-col items-center gap-2 p-5 rounded-3xl border-2 transition-all", editMode === 'erase' ? "border-blue-600 bg-blue-50/50 text-blue-600 shadow-lg" : "border-slate-100 bg-white text-slate-400")}>
+                                        <button onClick={() => setEditMode('erase')} className={cn("flex flex-col items-center gap-2 p-5 rounded-3xl border-2 transition-all", editMode === 'erase' ? "border-blue-600 bg-blue-50/50 text-blue-600 shadow-lg dark:bg-blue-900/20 dark:text-blue-400" : "border-slate-100 bg-white text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500")}>
                                             <div className="w-10 h-10 rounded-full border-2 border-current flex items-center justify-center font-black">-</div>
-                                            <span className="text-[11px] font-black uppercase tracking-tight">Erase</span>
+                                            <span className="text-[11px] font-black uppercase tracking-tight">{t.editor.erase}</span>
                                         </button>
-                                        <button onClick={() => setEditMode('restore')} className={cn("flex flex-col items-center gap-2 p-5 rounded-3xl border-2 transition-all", editMode === 'restore' ? "border-blue-600 bg-blue-50/50 text-blue-600 shadow-lg" : "border-slate-100 bg-white text-slate-400")}>
+                                        <button onClick={() => setEditMode('restore')} className={cn("flex flex-col items-center gap-2 p-5 rounded-3xl border-2 transition-all", editMode === 'restore' ? "border-blue-600 bg-blue-50/50 text-blue-600 shadow-lg dark:bg-blue-900/20 dark:text-blue-400" : "border-slate-100 bg-white text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500")}>
                                             <div className="w-10 h-10 rounded-full border-2 border-current flex items-center justify-center font-black">+</div>
-                                            <span className="text-[11px] font-black uppercase tracking-tight">Restore</span>
+                                            <span className="text-[11px] font-black uppercase tracking-tight">{t.editor.restore}</span>
                                         </button>
                                     </div>
 
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center px-1">
-                                            <label className="text-[11px] font-black text-slate-800 uppercase tracking-tighter">Selection Brush Size</label>
-                                            <span className="text-[11px] font-black text-blue-600">{brushSize}px</span>
+                                            <label className="text-[11px] font-black text-slate-800 uppercase tracking-tighter dark:text-white">{t.editor.brushSizeLabel}</label>
+                                            <span className="text-[11px] font-black text-blue-600 dark:text-blue-400">{brushSize}px</span>
                                         </div>
-                                        <input type="range" min="10" max="250" value={brushSize} onChange={(e) => setBrushSize(parseInt(e.target.value))} className="w-full h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+                                        <input type="range" min="10" max="250" value={brushSize} onChange={(e) => setBrushSize(parseInt(e.target.value))} className="w-full h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:bg-slate-700" />
                                     </div>
                                 </section>
                             )}
 
                             {activeTab === 'background' && (
                                 <section className="space-y-6 animate-in fade-in slide-in-from-right-4">
-                                    <div className="flex p-1 bg-slate-100 rounded-2xl w-full">
+                                    <div className="flex p-1 bg-slate-100 rounded-2xl w-full dark:bg-slate-800">
                                         {(['photo', 'color'] as const).map(tab => (
-                                            <button key={tab} onClick={() => setBgSubTab(tab)} className={cn("flex-grow py-2.5 rounded-xl text-[11px] font-black uppercase transition-all", bgSubTab === tab ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>
-                                                {tab}
+                                            <button key={tab} onClick={() => setBgSubTab(tab)} className={cn("flex-grow py-2.5 rounded-xl text-[11px] font-black uppercase transition-all", bgSubTab === tab ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white" : "text-slate-400 dark:text-slate-500")}>
+                                                {tab === 'photo' ? t.editor.photoTab : t.editor.colorTab}
                                             </button>
                                         ))}
                                     </div>
 
                                     {bgSubTab === 'photo' && (
                                         <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-bottom-2">
-                                            <button onClick={() => setBgImage(null)} className={cn("h-24 rounded-2xl border-2 flex items-center justify-center bg-slate-50", !bgImage ? "border-blue-600" : "border-slate-100")}>
-                                                <div className="text-[10px] font-black text-slate-400 uppercase">None</div>
+                                            <button onClick={() => { setBgImage(null); updateConfig({ bgImage: null }); }} className={cn("h-24 rounded-2xl border-2 flex items-center justify-center bg-slate-50", !bgImage ? "border-blue-600" : "border-slate-100 dark:border-slate-700 dark:bg-slate-800")}>
+                                                <div className="text-[10px] font-black text-slate-400 uppercase">{t.editor.noneOption}</div>
                                             </button>
                                             {photoPresets.map((url, i) => (
-                                                <button key={i} onClick={() => setBgImage(url)} className={cn("h-24 rounded-2xl border-2 overflow-hidden transition-all group relative", bgImage === url ? "border-blue-600 scale-102 shadow-lg" : "border-slate-100")}>
+                                                <button key={i} onClick={() => { setBgImage(url); updateConfig({ bgImage: url }); }} className={cn("h-24 rounded-2xl border-2 overflow-hidden transition-all group relative", bgImage === url ? "border-blue-600 scale-102 shadow-lg" : "border-slate-100 dark:border-slate-700")}>
                                                     <img src={url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" onError={(e) => (e.target as HTMLImageElement).parentElement?.classList.add('hidden')} />
                                                 </button>
                                             ))}
@@ -1097,7 +1408,7 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                             {colorGridItems.map((item) => {
                                                 if (item === 'transparent') {
                                                     return (
-                                                        <button key="none" onClick={() => { setBgColor('transparent'); setBgImage(null); }} className={cn("h-12 rounded-xl border-2 flex items-center justify-center transition-all", bgColor === 'transparent' && !bgImage ? "border-blue-600 scale-105 shadow-md" : "border-slate-50")}>
+                                                        <button key="none" onClick={() => { setBgColor('transparent'); setBgImage(null); updateConfig({ bgColor: 'transparent', bgImage: null }); }} className={cn("h-12 rounded-xl border-2 flex items-center justify-center transition-all", bgColor === 'transparent' && !bgImage ? "border-blue-600 scale-105 shadow-md" : "border-slate-50 dark:border-slate-700")}>
                                                             <div className="w-5 h-5 border-2 border-slate-300 rounded-full flex items-center justify-center relative">
                                                                 <div className="absolute w-full h-[2px] bg-slate-300 rotate-45" />
                                                             </div>
@@ -1106,13 +1417,13 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                                 }
                                                 if (item === 'custom') {
                                                     return (
-                                                        <button key="custom" onClick={() => colorPickerRef.current?.click()} className={cn("h-12 rounded-xl border-2 flex items-center justify-center transition-all bg-gradient-to-tr from-red-400 via-yellow-400 via-green-400 via-blue-400 to-purple-400", bgColor !== 'transparent' && !colorGridItems.includes(bgColor) && !bgImage ? "border-blue-600 scale-105 shadow-md" : "border-slate-50")}>
+                                                        <button key="custom" onClick={() => colorPickerRef.current?.click()} className={cn("h-12 rounded-xl border-2 flex items-center justify-center transition-all bg-gradient-to-tr from-red-400 via-yellow-400 via-green-400 via-blue-400 to-purple-400", bgColor !== 'transparent' && !colorGridItems.includes(bgColor) && !bgImage ? "border-blue-600 scale-105 shadow-md" : "border-slate-50 dark:border-slate-700")}>
                                                             <Palette className="w-5 h-5 text-white drop-shadow-md" />
-                                                            <input ref={colorPickerRef} type="color" value={customColor} onChange={(e) => { setCustomColor(e.target.value); setBgColor(e.target.value); setBgImage(null); }} className="sr-only" />
+                                                            <input ref={colorPickerRef} type="color" value={customColor} onChange={(e) => { const col = e.target.value; setCustomColor(col); setBgColor(col); setBgImage(null); updateConfig({ bgColor: col, bgImage: null }); }} className="sr-only" />
                                                         </button>
                                                     );
                                                 }
-                                                return <button key={item} onClick={() => { setBgColor(item); setBgImage(null); }} className={cn("h-12 rounded-xl border-2 transition-all", bgColor === item && !bgImage ? "border-blue-600 scale-105 shadow-md" : "border-slate-50")} style={{ background: item }} />;
+                                                return <button key={item} onClick={() => { setBgColor(item); setBgImage(null); updateConfig({ bgColor: item, bgImage: null }); }} className={cn("h-12 rounded-xl border-2 transition-all", bgColor === item && !bgImage ? "border-blue-600 scale-105 shadow-md" : "border-slate-50 dark:border-slate-700")} style={{ background: item }} />;
                                             })}
                                         </div>
                                     )}
@@ -1123,25 +1434,25 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                 <section className="space-y-8 animate-in fade-in slide-in-from-right-4">
                                     <div className="space-y-6">
                                         <div className="flex items-center gap-3">
-                                            <div className={cn("w-10 h-5 rounded-full transition-all relative cursor-pointer", isBlurEnabled ? "bg-blue-600" : "bg-slate-300")} onClick={() => setIsBlurEnabled(!isBlurEnabled)}>
+                                            <div className={cn("w-10 h-5 rounded-full transition-all relative cursor-pointer", isBlurEnabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600")} onClick={() => { setIsBlurEnabled(!isBlurEnabled); updateConfig({ isBlurEnabled: !isBlurEnabled }); }}>
                                                 <div className={cn("absolute top-1 w-3 h-3 bg-white rounded-full transition-all shadow-sm", isBlurEnabled ? "right-1" : "left-1")} />
                                             </div>
-                                            <span className="text-[11px] font-black text-slate-800 uppercase tracking-tighter">Blur background</span>
+                                            <span className="text-[11px] font-black text-slate-800 uppercase tracking-tighter dark:text-white">{t.editor.blurBackground}</span>
                                         </div>
-                                        <input type="range" min="0" max="40" step="1" value={bgBlur} onChange={(e) => setBgBlur(parseInt(e.target.value))} className="w-full h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+                                        <input type="range" min="0" max="40" step="1" value={bgBlur} onChange={(e) => { const val = parseInt(e.target.value); setBgBlur(val); updateConfig({ bgBlur: val }); }} className="w-full h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:bg-slate-700" />
                                     </div>
                                     <div className="space-y-6">
-                                        <div className="flex items-center gap-3 font-black text-[11px] text-slate-800 uppercase tracking-tighter">
-                                            <div className={cn("w-10 h-5 rounded-full transition-all relative cursor-pointer", isShadowEnabled ? "bg-blue-600" : "bg-slate-300")} onClick={() => setIsShadowEnabled(!isShadowEnabled)}>
+                                        <div className="flex items-center gap-3 font-black text-[11px] text-slate-800 uppercase tracking-tighter dark:text-white">
+                                            <div className={cn("w-10 h-5 rounded-full transition-all relative cursor-pointer", isShadowEnabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600")} onClick={() => { setIsShadowEnabled(!isShadowEnabled); updateConfig({ isShadowEnabled: !isShadowEnabled }); }}>
                                                 <div className={cn("absolute top-1 w-3 h-3 bg-white rounded-full transition-all shadow-sm", isShadowEnabled ? "right-1" : "left-1")} />
                                             </div>
-                                            <span>Product Shadow</span>
+                                            <span>{t.editor.productShadow}</span>
                                         </div>
-                                        <input type="range" min="0" max="100" value={shadowOpacity} onChange={(e) => setShadowOpacity(parseInt(e.target.value))} className="w-full h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+                                        <input type="range" min="0" max="100" value={shadowOpacity} onChange={(e) => { const val = parseInt(e.target.value); setShadowOpacity(val); updateConfig({ shadowOpacity: val }); }} className="w-full h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:bg-slate-700" />
                                     </div>
-                                    <div className="flex items-center justify-between p-4 bg-blue-50/50 rounded-3xl border border-blue-100">
-                                        <span className="text-[11px] font-black text-blue-900 uppercase tracking-tighter">Mirror Reflection</span>
-                                        <button onClick={() => setIsReflectionEnabled(!isReflectionEnabled)} className={cn("w-10 h-5 rounded-full transition-all relative", isReflectionEnabled ? "bg-blue-600" : "bg-slate-300")}>
+                                    <div className="flex items-center justify-between p-4 bg-blue-50/50 rounded-3xl border border-blue-100 dark:bg-blue-900/20 dark:border-blue-800">
+                                        <span className="text-[11px] font-black text-blue-900 uppercase tracking-tighter dark:text-blue-400">{t.editor.reflectionLabel}</span>
+                                        <button onClick={() => { setIsReflectionEnabled(!isReflectionEnabled); updateConfig({ isReflectionEnabled: !isReflectionEnabled }); }} className={cn("w-10 h-5 rounded-full transition-all relative", isReflectionEnabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600")}>
                                             <div className={cn("absolute top-1 w-3 h-3 bg-white rounded-full transition-all shadow-sm", isReflectionEnabled ? "right-1" : "left-1")} />
                                         </button>
                                     </div>
@@ -1150,14 +1461,14 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
 
                             {activeTab === 'adjust' && (
                                 <section className="space-y-6 animate-in fade-in slide-in-from-right-4">
-                                    <div className="space-y-4 p-5 bg-slate-50 rounded-3xl">
+                                    <div className="space-y-4 p-5 bg-slate-50 rounded-3xl dark:bg-slate-800">
                                         <div className="space-y-2">
-                                            <div className="flex justify-between text-[10px] font-black text-slate-600 uppercase"><span>Brightness</span><span>{brightness}%</span></div>
-                                            <input type="range" min="50" max="150" value={brightness} onChange={(e) => setBrightness(parseInt(e.target.value))} className="w-full h-1 bg-white rounded-lg appearance-none cursor-pointer accent-blue-600" />
+                                            <div className="flex justify-between text-[10px] font-black text-slate-600 uppercase dark:text-slate-400"><span>{t.editor.brightness}</span><span>{brightness}%</span></div>
+                                            <input type="range" min="50" max="150" value={brightness} onChange={(e) => { const val = parseInt(e.target.value); setBrightness(val); updateConfig({ brightness: val }); }} className="w-full h-1 bg-white rounded-lg appearance-none cursor-pointer accent-blue-600 dark:bg-slate-700" />
                                         </div>
                                         <div className="space-y-2">
-                                            <div className="flex justify-between text-[10px] font-black text-slate-600 uppercase"><span>Contrast</span><span>{contrast}%</span></div>
-                                            <input type="range" min="50" max="150" value={contrast} onChange={(e) => setContrast(parseInt(e.target.value))} className="w-full h-1 bg-white rounded-lg appearance-none cursor-pointer accent-blue-600" />
+                                            <div className="flex justify-between text-[10px] font-black text-slate-600 uppercase dark:text-slate-400"><span>{t.editor.contrast}</span><span>{contrast}%</span></div>
+                                            <input type="range" min="50" max="150" value={contrast} onChange={(e) => { const val = parseInt(e.target.value); setContrast(val); updateConfig({ contrast: val }); }} className="w-full h-1 bg-white rounded-lg appearance-none cursor-pointer accent-blue-600 dark:bg-slate-700" />
                                         </div>
                                     </div>
                                 </section>
@@ -1167,26 +1478,47 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 px-1">
                                             <Maximize className="w-4 h-4 text-blue-600" />
-                                            <label className="text-[11px] font-black text-slate-800 uppercase tracking-tighter">Social Resizing</label>
+                                            <label className="text-[11px] font-black text-slate-800 uppercase tracking-tighter dark:text-white">{t.editor.socialResizing}</label>
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
                                             {socialRatios.map(r => (
-                                                <button key={r.value} onClick={() => setAspectRatio(r.value)} className={cn("px-4 py-4 text-[11px] font-black rounded-2xl border-2 transition-all text-center leading-tight", aspectRatio === r.value ? "bg-blue-600 border-blue-600 text-white shadow-xl scale-105" : "bg-white border-slate-100 text-slate-600 hover:border-blue-100")}>{r.label}</button>
+                                                <button key={r.value} onClick={() => { setAspectRatio(r.value); updateConfig({ aspectRatio: r.value }); }} className={cn("px-4 py-4 text-[11px] font-black rounded-2xl border-2 transition-all text-center leading-tight", aspectRatio === r.value ? "bg-blue-600 border-blue-600 text-white shadow-xl scale-105" : "bg-white border-slate-100 text-slate-600 hover:border-blue-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:border-blue-900")}>{r.label}</button>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="space-y-4 p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                                    <div className="space-y-4 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
                                         <div className="flex justify-between items-center mb-2">
-                                            <div className="flex items-center gap-2"><ZoomIn className="w-4 h-4 text-blue-600" /><span className="text-[11px] font-black text-slate-800 uppercase tracking-tighter">Fit Padding</span></div>
-                                            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">{objectPadding}%</span>
+                                            <div className="flex items-center gap-2"><ZoomIn className="w-4 h-4 text-blue-600" /><span className="text-[11px] font-black text-slate-800 uppercase tracking-tighter dark:text-white">{t.editor.fitPadding}</span></div>
+                                            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg dark:bg-blue-900/30 dark:text-blue-400">{objectPadding}%</span>
                                         </div>
-                                        <input type="range" min="0" max="40" value={objectPadding} onChange={(e) => setObjectPadding(parseInt(e.target.value))} className="w-full h-1.5 bg-white rounded-lg appearance-none cursor-pointer accent-blue-600" />
+                                        <input type="range" min="0" max="40" value={objectPadding} onChange={(e) => { const val = parseInt(e.target.value); setObjectPadding(val); updateConfig({ objectPadding: val }); }} className="w-full h-1.5 bg-white rounded-lg appearance-none cursor-pointer accent-blue-600 dark:bg-slate-700" />
+                                    </div>
+                                </section>
+                            )}
+                            {activeTab === 'zoom' && (
+                                <section className="space-y-8 animate-in fade-in slide-in-from-right-4">
+                                    <div className="p-8 bg-blue-50/50 rounded-[2.5rem] border border-blue-100 dark:bg-blue-900/20 dark:border-blue-800 flex flex-col items-center text-center space-y-4">
+                                        <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center dark:bg-slate-800">
+                                            <ZoomIn className="w-8 h-8 text-blue-600" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[12px] font-black text-slate-800 uppercase tracking-tight dark:text-white mb-1">
+                                                {t.common.zoom}
+                                            </p>
+                                            <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic max-w-[200px]">
+                                                "{t.editor.hoverZoomNote}"
+                                            </p>
+                                        </div>
+                                        <div className="pt-4 w-full">
+                                            <div className="h-px bg-blue-100 w-full dark:bg-blue-900/30" />
+                                            <p className="mt-4 text-[9px] font-black text-blue-600 uppercase tracking-widest">{t.editor.qualityHigh}</p>
+                                        </div>
                                     </div>
                                 </section>
                             )}
                         </div>
-                        <div className="p-6 border-t border-slate-50 bg-white">
-                            <button onClick={onReset} className="w-full py-4 text-red-500 font-black hover:bg-red-50 rounded-2xl transition-all flex items-center justify-center gap-2 text-[10px] uppercase border border-red-50">
+                        <div className="p-6 border-t border-slate-50 bg-white dark:bg-slate-900 dark:border-slate-800">
+                            <button onClick={onReset} className="w-full py-4 text-red-500 font-black hover:bg-red-50 rounded-2xl transition-all flex items-center justify-center gap-2 text-[10px] uppercase border border-red-50 dark:border-red-900/30 dark:hover:bg-red-900/20">
                                 <Trash2 className="w-3.5 h-3.5" /> Clear Workspace
                             </button>
                         </div>

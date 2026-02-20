@@ -2,16 +2,22 @@ import React, { useState } from 'react';
 import { ImageComparison } from './ImageComparison';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useLanguage } from '../contexts/LanguageContext';
+import { translations } from '../lib/translations';
 
 export const SamplesSection: React.FC = () => {
+    const { language } = useLanguage();
+    const t = translations[language] || translations.en;
+
     const [activeTab1, setActiveTab1] = useState('Products');
     const [activeTab2, setActiveTab2] = useState('People');
 
+    const categoryKeys = ['products', 'people', 'animals', 'cars', 'graphics'] as const;
     const categories = ['Products', 'People', 'Animals', 'Cars', 'Graphics'];
 
     const sampleImages: Record<string, { before: string, after: string, overlay?: string, isTransparent?: boolean }> = {
         'Products': {
-            before: 'https://img.freepik.com/free-photo/white-background-with-white-clouds_1340-23424.jpg?q=80&w=1000', // A clean white-ish background
+            before: 'https://img.freepik.com/free-photo/white-background-with-white-clouds_1340-23424.jpg?q=80&w=1000',
             after: '/samples/blue_bg.jpg',
             overlay: '/samples/brown_bag_cutout.png',
             isTransparent: true
@@ -40,20 +46,20 @@ export const SamplesSection: React.FC = () => {
             {/* 1. Stunning Quality Section */}
             <section className="text-center space-y-12">
                 <div className="space-y-4">
-                    <h2 className="text-4xl font-black text-slate-800 tracking-tight">Stunning quality</h2>
+                    <h2 className="text-4xl font-black text-slate-800 tracking-tight">{t.samples.stunningTitle}</h2>
                     <div className="flex flex-wrap justify-center gap-2">
-                        {categories.map((cat) => (
+                        {categoryKeys.map((key) => (
                             <button
-                                key={cat}
-                                onClick={() => setActiveTab1(cat)}
+                                key={key}
+                                onClick={() => setActiveTab1(categories[categoryKeys.indexOf(key)])}
                                 className={cn(
                                     "px-5 py-2 rounded-full text-xs font-bold transition-all",
-                                    activeTab1 === cat
+                                    activeTab1 === categories[categoryKeys.indexOf(key)]
                                         ? "bg-slate-900 text-white shadow-lg shadow-slate-200 scale-105"
                                         : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                                 )}
                             >
-                                {cat}
+                                {t.samples.categories[key]}
                             </button>
                         ))}
                     </div>
@@ -68,7 +74,7 @@ export const SamplesSection: React.FC = () => {
                         className="max-h-[500px]"
                     />
                     <button className="mt-8 text-blue-600 font-bold text-sm flex items-center gap-2 mx-auto hover:gap-3 transition-all">
-                        See more samples <ArrowRight className="w-4 h-4" />
+                        {t.samples.seeMore} <ArrowRight className="w-4 h-4" />
                     </button>
                 </div>
             </section>
@@ -96,27 +102,25 @@ export const SamplesSection: React.FC = () => {
                 </div>
                 <div className="w-full lg:w-1/2 space-y-6">
                     <h2 className="text-4xl font-black text-slate-800 leading-tight">
-                        Boost your efficiency with automated background removal
+                        {t.samples.efficiencyTitle}
                     </h2>
                     <p className="text-slate-500 text-lg leading-relaxed">
-                        With remove.bg, deleting backgrounds and extracting the subject from an image is fast and effortless.
+                        {t.samples.efficiencyDesc1}
                     </p>
                     <div className="space-y-4">
                         <p className="text-slate-600 text-sm font-medium">
-                            Bulk editing lets you <span className="font-bold text-slate-900">process up to 500 images per minute</span>,
-                            while integrations with tools like <span className="font-bold text-slate-900">Figma, Photoshop</span>,
-                            and <span className="font-bold text-slate-900">Zapier</span> embed background removal directly into your workflow.
+                            {t.samples.efficiencyDesc2}
                         </p>
                         <p className="text-slate-600 text-sm">
-                            And, with the mobile app, you can erase backgrounds on the go, anytime, anywhere.
+                            {t.samples.efficiencyDesc3}
                         </p>
                     </div>
                     <div className="pt-4 flex flex-col gap-3">
                         <button className="text-blue-600 font-bold text-sm flex items-center gap-2 hover:gap-3 transition-all">
-                            remove.bg's integrations <ArrowRight className="w-4 h-4" />
+                            {t.samples.integrations} <ArrowRight className="w-4 h-4" />
                         </button>
                         <button className="text-blue-600 font-bold text-sm flex items-center gap-2 hover:gap-3 transition-all">
-                            remove.bg's API docs <ArrowRight className="w-4 h-4" />
+                            {t.samples.apiDocs} <ArrowRight className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
@@ -125,20 +129,20 @@ export const SamplesSection: React.FC = () => {
             {/* 3. Just Picture It Section */}
             <section className="text-center space-y-12">
                 <div className="space-y-4">
-                    <h2 className="text-4xl font-black text-slate-800 tracking-tight">Just picture it</h2>
+                    <h2 className="text-4xl font-black text-slate-800 tracking-tight">{t.samples.pictureTitle}</h2>
                     <div className="flex flex-wrap justify-center gap-2">
-                        {categories.map((cat) => (
+                        {categoryKeys.map((key) => (
                             <button
-                                key={cat}
-                                onClick={() => setActiveTab2(cat)}
+                                key={key}
+                                onClick={() => setActiveTab2(categories[categoryKeys.indexOf(key)])}
                                 className={cn(
                                     "px-5 py-2 rounded-full text-xs font-bold transition-all",
-                                    activeTab2 === cat
+                                    activeTab2 === categories[categoryKeys.indexOf(key)]
                                         ? "bg-slate-900 text-white shadow-lg"
                                         : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                                 )}
                             >
-                                {cat}
+                                {t.samples.categories[key]}
                             </button>
                         ))}
                     </div>
@@ -146,10 +150,10 @@ export const SamplesSection: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {[
-                        { label: 'Original', src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800' },
-                        { label: 'Transparent background', src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&bg=transparent', transparent: true },
-                        { label: 'New background', src: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800' },
-                        { label: 'Endless possibilities', grid: true }
+                        { label: t.samples.labels.original, src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800' },
+                        { label: t.samples.labels.transparent, src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&bg=transparent', transparent: true },
+                        { label: t.samples.labels.newBg, src: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800' },
+                        { label: t.samples.labels.endless, grid: true }
                     ].map((item, i) => (
                         <div key={i} className="space-y-3">
                             <div className={cn(
@@ -176,18 +180,14 @@ export const SamplesSection: React.FC = () => {
             {/* 4. Blog & Updates Section */}
             <section className="space-y-16">
                 <div className="flex justify-between items-end">
-                    <h2 className="text-4xl font-black text-slate-800 tracking-tight">Blog</h2>
+                    <h2 className="text-4xl font-black text-slate-800 tracking-tight">{t.blog.title}</h2>
                     <button className="text-blue-600 font-bold text-sm flex items-center gap-2 hover:gap-3 transition-all">
-                        See more articles <ArrowRight className="w-4 h-4" />
+                        {t.blog.seeMore} <ArrowRight className="w-4 h-4" />
                     </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {[
-                        { date: 'Nov 25, 2025', title: 'Strava overlay: How to use it for Instagram stories and posts' },
-                        { date: 'Nov 17, 2025', title: 'Black Friday offer: 50% off selected yearly plans' },
-                        { date: 'Oct 20, 2025', title: 'Remove the background in GIMP' }
-                    ].map((blog, i) => (
+                    {(t.blog.posts || translations.en.blog.posts).map((blog: any, i: number) => (
                         <div key={i} className="p-8 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all group cursor-pointer">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{blog.date}</p>
                             <h3 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-tight">{blog.title}</h3>
@@ -199,24 +199,24 @@ export const SamplesSection: React.FC = () => {
                     <div className="bg-slate-900 rounded-[4rem] p-12 lg:p-20 relative overflow-hidden">
                         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
                             <div className="space-y-4 max-w-xl">
-                                <h2 className="text-4xl font-black text-white leading-tight">Get Updates</h2>
+                                <h2 className="text-4xl font-black text-white leading-tight">{t.newsletter.title}</h2>
                                 <p className="text-slate-400 text-lg leading-relaxed">
-                                    Sign up for our mailing list to receive news and updates about remove.bg products and services. You can unsubscribe at any time.
+                                    {t.newsletter.desc}
                                 </p>
                             </div>
                             <div className="w-full lg:w-auto relative max-w-md">
                                 <div className="flex p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
                                     <input
                                         type="email"
-                                        placeholder="Enter your email"
+                                        placeholder={t.newsletter.placeholder}
                                         className="bg-transparent border-none text-white px-6 py-3 focus:ring-0 flex-grow placeholder:text-slate-500 font-medium"
                                     />
                                     <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-black text-sm uppercase tracking-widest transition-all">
-                                        Subscribe
+                                        {t.newsletter.subscribe}
                                     </button>
                                 </div>
                                 <p className="text-[10px] text-slate-500 mt-4 px-6 text-center lg:text-left">
-                                    To learn more about how remove.bg handles your personal data, check our <span className="underline cursor-pointer">Privacy Policy</span>.
+                                    {t.newsletter.privacyNote}
                                 </p>
                             </div>
                         </div>
@@ -237,7 +237,7 @@ export const SamplesSection: React.FC = () => {
                     <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map(s => <span key={s} className={cn("text-xs", s < 5 ? "text-orange-400" : "text-slate-200")}>★</span>)}
                     </div>
-                    <span className="text-[10px] font-bold text-slate-400">4.4/5 BASED ON 150 REVIEWS</span>
+                    <span className="text-[10px] font-bold text-slate-400">{t.common.reviews}</span>
                 </div>
                 <div className="h-0.5 w-1/4 bg-slate-100" />
             </div>

@@ -8,17 +8,41 @@
 
 :root {
   font-family: var(--font-sans);
+  --bg-primary: var(--color-slate-50);
+  --text-primary: var(--color-slate-900);
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+.dark {
+  --bg-primary: var(--color-slate-950);
+  --text-primary: var(--color-slate-50);
+  color-scheme: dark;
 }
 
 body {
-  background-color: var(--color-slate-50);
-  color: var(--color-slate-900);
-  background-image:
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.15) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(34, 197, 94, 0.15) 0px, transparent 50%);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   background-attachment: fixed;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.gradient-bg {
+  background-image:
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(34, 197, 94, 0.08) 0px, transparent 50%);
+}
+
+.dark body {
+  background-color: var(--color-slate-950);
+  color: var(--color-slate-50);
+  background-image:
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(34, 197, 94, 0.1) 0px, transparent 50%);
 }
 
 /* Glassmorphism Utilities */
