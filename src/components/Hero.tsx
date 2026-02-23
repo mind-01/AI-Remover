@@ -114,7 +114,7 @@ export const Hero: React.FC<HeroProps> = ({ onFilesSelect }) => {
                             relative w-full max-w-2xl p-12 rounded-[3rem] border-4 border-dashed transition-all duration-300
                             ${isDragging
                                 ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-900/40 shadow-[0_0_50px_rgba(59,130,246,0.2)]'
-                                : 'border-blue-200/60 bg-white/80 backdrop-blur-sm hover:border-blue-400 hover:shadow-[0_20px_60px_rgba(59,130,246,0.15)] shadow-2xl shadow-slate-200/50 dark:bg-slate-800/80 dark:border-slate-700/50 dark:shadow-none dark:hover:border-blue-500/50'}
+                                : 'border-blue-200 bg-white shadow-2xl shadow-slate-200/60 dark:bg-slate-900/50 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors'}
                         `}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
@@ -150,7 +150,7 @@ export const Hero: React.FC<HeroProps> = ({ onFilesSelect }) => {
                             <div className="space-y-4">
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="px-12 py-5 bg- gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl text-lg font-black hover:from-blue-600 hover:to-blue-700 transition-all shadow-2xl shadow-slate-200 hover:shadow-blue-200/50 hover:scale-105 active:scale-95 flex items-center gap-3 mx-auto uppercase tracking-wide dark:from-white dark:to-slate-100 dark:text-slate-900 dark:hover:from-blue-50 dark:hover:to-blue-100 dark:shadow-none"
+                                    className="px-12 py-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl text-lg font-black hover:from-blue-600 hover:to-blue-700 transition-all shadow-2xl shadow-slate-200 hover:shadow-blue-200/50 hover:scale-105 active:scale-95 flex items-center gap-3 mx-auto uppercase tracking-wide dark:from-white dark:to-slate-100 dark:text-slate-900 dark:hover:from-blue-50 dark:hover:to-blue-100 dark:shadow-none"
                                 >
                                     {heroT.uploadButton} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                 </button>
