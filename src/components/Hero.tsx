@@ -45,6 +45,60 @@ export const Hero: React.FC<HeroProps> = ({ onFilesSelect }) => {
         }
     };
 
+    const [urlInput, setUrlInput] = useState('');
+    const [isFetching, setIsFetching] = useState(false);
+    const [urlError, setUrlError] = useState<string | null>(null);
+
+    const handleUrlUpload = React.useCallback(async (url: string = urlInput) => {
+        if (!url) return;
+        setIsFetching(true);
+        setUrlError(null);
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Failed to fetch');
+            const blob = await response.blob();
+            if (!blob.type.startsWith('image/')) throw new Error('Not an image');
+
+            const filename = url.split('/').pop()?.split('?')[0] || 'uploaded-image.png';
+            const file = new File([blob], filename, { type: blob.type });
+            onFilesSelect([file]);
+            setUrlInput('');
+        } catch (err) {
+            console.error('URL Fetch Error:', err);
+            setUrlError(heroT.urlError || 'Failed to fetch image from URL.');
+        } finally {
+            setIsFetching(false);
+        }
+    }, [urlInput, onFilesSelect, heroT.urlError]);
+
+    const handlePaste = React.useCallback(async (e: ClipboardEvent | React.ClipboardEvent) => {
+        const clipboardData = (e as ClipboardEvent).clipboardData || (e as React.ClipboardEvent).clipboardData;
+        const items = clipboardData?.items;
+        if (!items) return;
+
+        // Check for images first
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.startsWith('image/')) {
+                const file = items[i].getAsFile();
+                if (file) {
+                    onFilesSelect([file]);
+                    return;
+                }
+            }
+        }
+
+        // Check for text (URL)
+        const text = clipboardData.getData('text');
+        if (text && (text.startsWith('http://') || text.startsWith('https://'))) {
+            handleUrlUpload(text);
+        }
+    }, [handleUrlUpload, onFilesSelect]);
+
+    React.useEffect(() => {
+        window.addEventListener('paste', handlePaste);
+        return () => window.removeEventListener('paste', handlePaste);
+    }, [handlePaste]);
+
     const categories = [
         { id: 'products', label: 'Products' },
         { id: 'people', label: 'People' },
@@ -119,6 +173,7 @@ export const Hero: React.FC<HeroProps> = ({ onFilesSelect }) => {
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
+                        onPaste={handlePaste}
                     >
                         <input
                             type="file"
@@ -133,30 +188,66 @@ export const Hero: React.FC<HeroProps> = ({ onFilesSelect }) => {
                             <div className="relative inline-flex group/icon">
                                 <div className="absolute inset-0 bg-blue-500 blur-3xl opacity-20 group-hover/icon:opacity-40 animate-pulse transition-opacity" />
                                 <motion.div
-                                    animate={{
+                                    animate={isFetching ? {
+                                        rotate: [0, 360],
+                                    } : {
                                         y: [0, -8, 0],
                                     }}
-                                    transition={{
+                                    transition={isFetching ? {
+                                        duration: 1,
+                                        repeat: Infinity,
+                                        ease: "linear"
+                                    } : {
                                         duration: 4,
                                         repeat: Infinity,
                                         ease: "easeInOut"
                                     }}
-                                    className="relative p-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-3xl shadow-xl shadow-blue-200 dark:shadow-blue-900/40 border border-blue-400/30"
+                                    className={`relative p-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-3xl shadow-xl shadow-blue-200 dark:shadow-blue-900/40 border border-blue-400/30 transition-transform ${isFetching ? 'scale-110' : ''}`}
                                 >
                                     <Upload className="w-10 h-10 text-white" />
                                 </motion.div>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="px-12 py-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl text-lg font-black hover:from-blue-600 hover:to-blue-700 transition-all shadow-2xl shadow-slate-200 hover:shadow-blue-200/50 hover:scale-105 active:scale-95 flex items-center gap-3 mx-auto uppercase tracking-wide dark:from-white dark:to-slate-100 dark:text-slate-900 dark:hover:from-blue-50 dark:hover:to-blue-100 dark:shadow-none"
+                                    disabled={isFetching}
+                                    className="px-12 py-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl text-lg font-black hover:from-blue-600 hover:to-blue-700 transition-all shadow-2xl shadow-slate-200 hover:shadow-blue-200/50 hover:scale-105 active:scale-95 flex items-center gap-3 mx-auto uppercase tracking-wide dark:from-white dark:to-slate-100 dark:text-slate-900 dark:hover:from-blue-50 dark:hover:to-blue-100 dark:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {heroT.uploadButton} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    {isFetching ? heroT.fetching : heroT.uploadButton} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                 </button>
-                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] dark:text-slate-500">
-                                    {isDragging ? heroT.dropImage : heroT.noRegistration}
-                                </p>
+
+                                <div className="flex flex-col items-center gap-4">
+                                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] dark:text-slate-500">
+                                        {isDragging ? heroT.dropImage : heroT.noRegistration}
+                                    </p>
+
+                                    <div className="w-full max-w-sm space-y-2">
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                value={urlInput}
+                                                onChange={(e) => setUrlInput(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleUrlUpload()}
+                                                placeholder={heroT.urlPlaceholder}
+                                                disabled={isFetching}
+                                                className="w-full px-6 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-400 dark:text-white"
+                                            />
+                                            {urlInput && (
+                                                <button
+                                                    onClick={() => handleUrlUpload()}
+                                                    disabled={isFetching}
+                                                    className="absolute right-2 top-1.5 bottom-1.5 px-3 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-colors disabled:opacity-50"
+                                                >
+                                                    {isFetching ? '...' : 'Go'}
+                                                </button>
+                                            )}
+                                        </div>
+                                        {urlError && (
+                                            <p className="text-red-500 text-[10px] font-bold uppercase tracking-tight">{urlError}</p>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="flex flex-col items-center gap-2 text-[10px] font-bold text-slate-400 mt-4 uppercase tracking-wider dark:text-slate-500">

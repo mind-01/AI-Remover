@@ -256,7 +256,10 @@ export const translations: Record<string, any> = {
             noRegistration: 'No registration required. 100% Free.',
             formats: 'JPG, PNG, WEBP (Max 15MB)',
             qualityTitle: 'Stunning quality',
-            seeSamples: 'See more samples'
+            seeSamples: 'See more samples',
+            urlPlaceholder: 'Paste image URL...',
+            urlError: 'Failed to fetch image from URL.',
+            fetching: 'Fetching image...'
         }
     },
     hi: {
@@ -476,7 +479,10 @@ export const translations: Record<string, any> = {
             noRegistration: 'कोई रजिस्ट्रेशन आवश्यक नहीं। 100% मुफ्त।',
             formats: 'JPG, PNG, WEBP (अधिकतम 15MB)',
             qualityTitle: 'शानदार गुणवत्ता',
-            seeSamples: 'अधिक नमूने देखें'
+            seeSamples: 'अधिक नमूने देखें',
+            urlPlaceholder: 'इमेज यूआरएल पेस्ट करें...',
+            urlError: 'यूआरएल से इमेज प्राप्त करने में विफल।',
+            fetching: 'इमेज प्राप्त की जा रही है...'
         }
     },
     es: {
@@ -517,7 +523,10 @@ export const translations: Record<string, any> = {
             privacy: 'Política de privacidad',
             terms: 'Términos de servicio',
             help: 'Centro de ayuda',
-            reviews: '4.4/5 BASADO EN 150 RESEÑAS'
+            reviews: '4.4/5 BASADO EN 150 RESEÑAS',
+            urlPlaceholder: 'Pegar URL de imagen...',
+            urlError: 'Error al obtener la imagen desde la URL.',
+            fetching: 'Obteniendo imagen...'
         },
         editor: {
             downloadMenuTitle: 'Seleccionar calidad de descarga',
