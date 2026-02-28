@@ -223,6 +223,7 @@ export const translations: Record<string, any> = {
             title: 'Blog',
             seeMore: 'See more articles',
             posts: [
+                { date: 'Feb 28, 2026', title: 'AI Background Remover vs. Photoshop (2026 Ultimate Comparison)' },
                 { date: 'Feb 21, 2026', title: 'How to Create a Budget Product Photography Studio Using AI (2026 Guide)' },
                 { date: 'Feb 21, 2026', title: 'AI Background Removal API Integration Guide (Developer Beta)' },
                 { date: 'Feb 21, 2026', title: 'The Hair & Fur Detail Guide: Master Advanced AI Masking' },
@@ -449,6 +450,7 @@ export const translations: Record<string, any> = {
             title: 'ब्लॉग',
             seeMore: 'अधिक लेख देखें',
             posts: [
+                { date: 'फरवरी 28, 2026', title: 'एआई बैकग्राउंड रिमूवल बनाम फोटोशॉप (2026 अल्टीमेट तुलना)' },
                 { date: 'फरवरी 21, 2026', title: 'एआई का उपयोग करके बजट प्रोडक्ट फोटोग्राफी स्टूडियो कैसे बनाएं (2026 गाइड)' },
                 { date: 'फरवरी 21, 2026', title: 'एआई बैकग्राउंड रिमूवल एपीआई इंटीग्रेशन गाइड (डेवलपर बीटा)' },
                 { date: 'फरवरी 21, 2026', title: 'हेयर एंड फर डिटेल गाइड: एडवांस एआई मास्किंग में महारत हासिल करें' },

@@ -38,6 +38,15 @@ export const BlogListPage: React.FC = () => {
                 console.error('Error fetching posts:', err);
                 setPosts([
                     {
+                        id: '11',
+                        title: 'AI Background Remover vs. Photoshop (2026 Ultimate Comparison)',
+                        slug: 'ai-background-remover-vs-photoshop-2026',
+                        excerpt: 'Is the browser-based neural engine faster than the industry giant? See the 2026 speed and accuracy benchmarks.',
+                        cover_image: '/blog/ai-background-remover-pro-editor-background.webp',
+                        created_at: new Date().toISOString(),
+                        status: 'published'
+                    },
+                    {
                         id: '10',
                         title: 'How to Create a Budget Product Photography Studio Using AI (Save 80% on Costs – 2026 Guide)',
                         slug: 'budget-product-photography-studio-ai-guide',
