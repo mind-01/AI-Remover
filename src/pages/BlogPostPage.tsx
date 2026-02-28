@@ -3886,7 +3886,9 @@ export const BlogPostPage: React.FC = () => {
                     </motion.div>
 
                     <div className="max-w-3xl mx-auto">
-                        {post.slug === 'canva-pro-background-remover-free-alternative' ? (
+                        {post.id === '12' ||
+                            post.slug?.toLowerCase().trim() === 'canva-pro-background-remover-free-alternative' ||
+                            post.title?.toLowerCase().includes('canva pro background remover') ? (
                             <Article12Content />
                         ) : (
                             <div
