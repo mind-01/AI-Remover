@@ -111,9 +111,9 @@ export const BlogListPage: React.FC = () => {
                     },
                     {
                         id: '12',
-                        title: 'Canva Pro Background Remover Free Alternative (2026 Guide)',
+                        title: 'Canva Pro Background Remover Free (2026) – Best RemovePro Alternative',
                         slug: 'canva-pro-background-remover-free-alternative',
-                        excerpt: 'Stop paying for a subscription to remove backgrounds. Discover how to get Canva Pro quality isolation for free with RemovePro.',
+                        excerpt: 'Discover the best free alternative to Canva Pro\'s background remover in 2026. Learn how to get HD quality with zero paywall.',
                         cover_image: '/blog/nike-shoe-background-removal.webp',
                         created_at: new Date().toISOString(),
                         status: 'published'
