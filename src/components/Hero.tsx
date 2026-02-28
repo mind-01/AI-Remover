@@ -45,11 +45,10 @@ export const Hero: React.FC<HeroProps> = ({ onFilesSelect }) => {
         }
     };
 
-    const [urlInput, setUrlInput] = useState('');
     const [isFetching, setIsFetching] = useState(false);
     const [urlError, setUrlError] = useState<string | null>(null);
 
-    const handleUrlUpload = React.useCallback(async (url: string = urlInput) => {
+    const handleUrlUpload = React.useCallback(async (url: string) => {
         if (!url) return;
         setIsFetching(true);
         setUrlError(null);
@@ -62,14 +61,13 @@ export const Hero: React.FC<HeroProps> = ({ onFilesSelect }) => {
             const filename = url.split('/').pop()?.split('?')[0] || 'uploaded-image.png';
             const file = new File([blob], filename, { type: blob.type });
             onFilesSelect([file]);
-            setUrlInput('');
         } catch (err) {
             console.error('URL Fetch Error:', err);
             setUrlError(heroT.urlError || 'Failed to fetch image from URL.');
         } finally {
             setIsFetching(false);
         }
-    }, [urlInput, onFilesSelect, heroT.urlError]);
+    }, [onFilesSelect, heroT.urlError]);
 
     const handlePaste = React.useCallback(async (e: ClipboardEvent | React.ClipboardEvent) => {
         const clipboardData = (e as ClipboardEvent).clipboardData || (e as React.ClipboardEvent).clipboardData;
@@ -223,28 +221,8 @@ export const Hero: React.FC<HeroProps> = ({ onFilesSelect }) => {
                                     </p>
 
                                     <div className="w-full max-w-sm space-y-2">
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                value={urlInput}
-                                                onChange={(e) => setUrlInput(e.target.value)}
-                                                onKeyDown={(e) => e.key === 'Enter' && handleUrlUpload()}
-                                                placeholder={heroT.urlPlaceholder}
-                                                disabled={isFetching}
-                                                className="w-full px-6 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-400 dark:text-white"
-                                            />
-                                            {urlInput && (
-                                                <button
-                                                    onClick={() => handleUrlUpload()}
-                                                    disabled={isFetching}
-                                                    className="absolute right-2 top-1.5 bottom-1.5 px-3 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-colors disabled:opacity-50"
-                                                >
-                                                    {isFetching ? '...' : 'Go'}
-                                                </button>
-                                            )}
-                                        </div>
                                         {urlError && (
-                                            <p className="text-red-500 text-[10px] font-bold uppercase tracking-tight">{urlError}</p>
+                                            <p className="text-red-500 text-[10px] font-bold uppercase tracking-tight bg-red-50 dark:bg-red-900/20 py-2 px-4 rounded-lg border border-red-100 dark:border-red-800/50">{urlError}</p>
                                         )}
                                     </div>
                                 </div>

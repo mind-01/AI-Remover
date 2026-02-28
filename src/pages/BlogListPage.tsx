@@ -38,6 +38,15 @@ export const BlogListPage: React.FC = () => {
                 console.error('Error fetching posts:', err);
                 setPosts([
                     {
+                        id: '8',
+                        title: 'The Hair & Fur Detail Guide: Professional AI Background Removal',
+                        slug: 'hair-fur-background-removal-guide',
+                        excerpt: 'Master the toughest challenge in photo editing. Learn how to use AI to achieve pixel-perfect hair and fur cutouts without losing a single strand.',
+                        cover_image: '/blog/hair-fur-detail-ai-background-removal.webp',
+                        created_at: new Date().toISOString(),
+                        status: 'published'
+                    },
+                    {
                         id: '7',
                         title: 'How to Remove Background in Bulk for Etsy & Shopify Sellers',
                         slug: 'bulk-background-removal-etsy-shopify',

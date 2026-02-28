@@ -1833,6 +1833,13 @@ export const BlogPostPage: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {[
                                 {
+                                    id: '8',
+                                    title: 'The Hair & Fur Detail Guide: Professional AI Background Removal',
+                                    slug: 'hair-fur-background-removal-guide',
+                                    excerpt: 'Master the toughest challenge in photo editing. Learn how to use AI to achieve pixel-perfect hair and fur cutouts without losing a single strand.',
+                                    cover_image: '/blog/ai-background-remover-pro-editor-background.webp'
+                                },
+                                {
                                     id: '7',
                                     title: 'Bulk Background Removal for Etsy & Shopify',
                                     slug: 'bulk-background-removal-etsy-shopify',
@@ -1845,6 +1852,13 @@ export const BlogPostPage: React.FC = () => {
                                     slug: 'remove-background-without-uploading',
                                     excerpt: 'How to remove backgrounds without uploading images. Local WASM and RAM processing guide.',
                                     cover_image: '/blog/remove-background-no-upload-privacy.webp'
+                                },
+                                {
+                                    id: '5',
+                                    title: 'Amazon Product Photography Guide',
+                                    slug: 'how-to-remove-background-for-amazon-product-photos',
+                                    excerpt: 'Master Amazon standards. Create pure white #FFFFFF backgrounds that skyrocket your conversion rates.',
+                                    cover_image: '/blog/nike-shoe-background-removal.webp'
                                 },
                                 {
                                     id: '1',
@@ -1866,13 +1880,6 @@ export const BlogPostPage: React.FC = () => {
                                     slug: 'how-to-remove-background-on-mobile',
                                     excerpt: 'Learn how to remove backgrounds instantly on your mobile phone without downloading any clunky apps.',
                                     cover_image: '/blog/remove-background-on-your-phone-free-ai-tool.webp'
-                                },
-                                {
-                                    id: '4',
-                                    title: 'Amazon Product Photography Guide',
-                                    slug: 'how-to-remove-background-for-amazon-product-photos',
-                                    excerpt: 'Master Amazon standards. Create pure white #FFFFFF backgrounds that skyrocket your conversion rates.',
-                                    cover_image: '/blog/nike-shoe-background-removal.webp'
                                 }
                             ].filter(p => p.slug !== post.slug).slice(0, 2).map((relatedPost) => (
                                 <motion.div
