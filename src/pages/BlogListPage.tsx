@@ -38,6 +38,24 @@ export const BlogListPage: React.FC = () => {
                 console.error('Error fetching posts:', err);
                 setPosts([
                     {
+                        id: '10',
+                        title: 'How to Create a Budget Product Photography Studio Using AI (Save 80% on Costs – 2026 Guide)',
+                        slug: 'budget-product-photography-studio-ai-guide',
+                        excerpt: 'Save 80% on costs by building a DIY home studio. Learn how to use your smartphone and AI to create professional product photos with RemovePro.',
+                        cover_image: '/blog/nike-shoe-background-removal.webp',
+                        created_at: new Date().toISOString(),
+                        status: 'published'
+                    },
+                    {
+                        id: '9',
+                        title: 'AI Background Removal API Integration Guide (Developer Beta – 2026)',
+                        slug: 'ai-background-removal-api-guide',
+                        excerpt: 'Integrate RemovePro’s high-performance Subject-AI into your business workflow. Closed Beta access for REST API is now open for partners and Business users.',
+                        cover_image: '/blog/ai-background-remover-pro-editor-background.webp',
+                        created_at: new Date().toISOString(),
+                        status: 'published'
+                    },
+                    {
                         id: '8',
                         title: 'The Hair & Fur Detail Guide: Professional AI Background Removal',
                         slug: 'hair-fur-background-removal-guide',

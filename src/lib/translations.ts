@@ -223,6 +223,8 @@ export const translations: Record<string, any> = {
             title: 'Blog',
             seeMore: 'See more articles',
             posts: [
+                { date: 'Feb 21, 2026', title: 'How to Create a Budget Product Photography Studio Using AI (2026 Guide)' },
+                { date: 'Feb 21, 2026', title: 'AI Background Removal API Integration Guide (Developer Beta)' },
                 { date: 'Feb 21, 2026', title: 'The Hair & Fur Detail Guide: Master Advanced AI Masking' },
                 { date: 'Feb 21, 2026', title: 'Bulk Background Removal for Etsy & Shopify Sellers' },
                 { date: 'Feb 21, 2026', title: 'How to Remove Background Without Uploading (Privacy Safe)' },
@@ -447,6 +449,8 @@ export const translations: Record<string, any> = {
             title: 'ब्लॉग',
             seeMore: 'अधिक लेख देखें',
             posts: [
+                { date: 'फरवरी 21, 2026', title: 'एआई का उपयोग करके बजट प्रोडक्ट फोटोग्राफी स्टूडियो कैसे बनाएं (2026 गाइड)' },
+                { date: 'फरवरी 21, 2026', title: 'एआई बैकग्राउंड रिमूवल एपीआई इंटीग्रेशन गाइड (डेवलपर बीटा)' },
                 { date: 'फरवरी 21, 2026', title: 'हेयर एंड फर डिटेल गाइड: एडवांस एआई मास्किंग में महारत हासिल करें' },
                 { date: 'फरवरी 21, 2026', title: 'Etsy और Shopify विक्रेताओं के लिए बल्क बैकग्राउंड रिमूवल' },
                 { date: 'फरवरी 21, 2026', title: 'बिना अपलोड किए बैकग्राउंड कैसे निकालें (गोपनीयता सुरक्षित)' },
